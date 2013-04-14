@@ -1,0 +1,93 @@
+#! /usr/bin/env python
+
+import os, re
+from optparse import OptionParser
+
+"""
+Helper script for programatically updating VERSION doc and CHANGELOG
+
+- Bumps version numbers
+- Appends to CHANGELOG
+"""
+
+def main():
+    """
+    Main dispatcher for other commands.
+    """
+    
+    usage = 'usage %prog [options] <command> <version_number>'
+    parser = OptionParser(usage)
+    parser.add_option('-w', '--working-dir', dest="working_dir",
+                      help="The working directory the project is in, defaults to the CWD.", metavar="CWD",
+                      default=os.getcwd())
+    (options, args) = parser.parse_args()
+
+    if len(args) == 0:
+        parser.error('A command is required!')
+    if len(args) == 1:
+        parser.error('A version number is required!')
+
+    functions = {
+        'version': version,
+        'changelog': changelog
+    }
+    command = args[0].lower()
+    try:
+        functions[command](args, options)
+    except KeyError:
+        print ('Could not find the command' + command)
+
+
+def version(args, options):
+    """
+    Update version numbers in the two files its in.
+    """
+    new_version = args[1]
+
+    # Update VERSION.txt
+    path = os.path.join(options.working_dir, 'doc/VERSION');
+    version_file = open(path, 'r')
+    contents = version_file.read()
+    
+    if new_version == "++" :
+        new_version = auto_new_version (contents)
+                        
+    version_file = open(path, 'w')
+    version_file.write(new_version)
+    version_file.close()
+
+
+def auto_new_version (contents) :
+    """
+    Computes ++ of the last version token and substitutes it in the contents
+    """
+    new_version = int(re.search( r"""\.([0-9]+)(-[a-zA-Z]+)?$""", contents ).group(1)) + 1
+    new_version = re.sub( r"""([0-9]+)(-[a-zA-Z]+)?$""", str(new_version), contents )
+    return new_version 
+
+#TODO: make  this work
+def changelog(args, options):
+    """
+    Find and fix the changelog files.
+    """
+    
+    path = os.path.join(options.working_dir, 'doc/CHANGELOG')
+    cl = open(path, 'r')
+    contents = cl.read()
+    cl.close()
+    new_version = args[1]
+    
+    if new_version == "++" :
+        new_version = auto_new_version (contents)
+
+    # Fix home.ctp in libs dir.
+    
+    contents = re.sub(r"""changelogs/([^"']+)""", 'changelogs/%s' % new_version, contents)
+
+    cl = open(path, 'w+')
+    cl.write(contents)
+    cl.close()
+
+
+if __name__ == '__main__':
+    main()
