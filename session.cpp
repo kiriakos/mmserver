@@ -225,7 +225,7 @@ void* MobileMouseSession(void* context)
 
 		/* mouse clicks */
 		std::string key, state;
-		if (pcrecpp::RE("CLICK\x1e([LR])\x1e([DU])\x1e\x04").FullMatch(packet, &key, &state))
+ 		if (pcrecpp::RE("CLICK\x1e([LR])\x1e([DU])\x1e\x04").FullMatch(packet, &key, &state))
 		{
 			if (key == "L")
 				mousePointer.MouseLeft(state == "D"?
@@ -240,7 +240,9 @@ void* MobileMouseSession(void* context)
 
 		/* mouse movements */
 		std::string xp, yp;
-		if (pcrecpp::RE("MOVE\x1e(-?\\d+)\x1e(-?\\d+)\x1e[10]\x04").FullMatch(packet, &xp, &yp))
+		/* PATCH0.2 // if (pcrecpp::RE("MOVE\x1e(-?\\d+)\x1e(-?\\d+)\x1e[10]\x04").FullMatch(packet, &xp, &yp)) */
+		if (pcrecpp::RE("MOVE\x1e(-?[\\d\x2e]+)\x1e(-?[\\d\x2e]+)\x1e[10]\x04").FullMatch(packet, &xp, &yp))
+        /*if (pcrecpp::RE("MOVE(.-?[0-9]+.[0-9]+){2}.[10].\x04").FullMatch(packet, &xp, &yp))*/
 		{
 			struct timeval currentMouseEvent;
 			gettimeofday(&currentMouseEvent, 0x0);
@@ -268,7 +270,7 @@ void* MobileMouseSession(void* context)
 		if (pcrecpp::RE("SCROLL\x1e(-?\\d+)\x1e(-?\\d+)\x1e\x04").FullMatch(packet, &xs, &ys))
 		{
 			mousePointer.MouseWheelY(
-					(int)strtol(ys.c_str(), 0x0, 10)
+					-(int)strtol(ys.c_str(), 0x0, 10)
 					);
 			continue;
 		}
@@ -276,7 +278,7 @@ void* MobileMouseSession(void* context)
 		if (pcrecpp::RE("SCROLL\x1e(-?\\d+\\.\\d+)\x1e(-?\\d+\\.\\d+)\x1e\x04").FullMatch(packet, &xs, &ys))
 		{
 			mousePointer.MouseWheelY(
-					(int)strtof(ys.c_str(), 0x0)
+					-(int)strtof(ys.c_str(), 0x0)
 					);
 			continue;
 		}
