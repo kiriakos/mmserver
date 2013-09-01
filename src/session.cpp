@@ -416,9 +416,8 @@ void* MobileMouseSession(void* context)
 		if (pcrecpp::RE("HOTKEY\x1eHK(\\d)\x04").FullMatch(packet, &hotkey))
 		{
 			std::string command = appConfig.getHotKeyCommand((unsigned int)strtoul(hotkey.c_str(), 0x0, 10));
-			int ret;
 			if (!command.empty())
-				ret = system(command.c_str());
+				system(command.c_str());
 			continue;
 		}
 		if (pcrecpp::RE("HOTKEY\x1e(B[12])\x04").FullMatch(packet, &hotkey))
@@ -428,9 +427,8 @@ void* MobileMouseSession(void* context)
 				command = appConfig.getHotKeyCommand(5);
 			if (hotkey == "B2")
 				command = appConfig.getHotKeyCommand(6);
-			int ret;
 			if (!command.empty())
-				ret = system(command.c_str());
+				system(command.c_str());
 			continue;
 		}
 
