@@ -670,7 +670,7 @@ void* MobileMouseSession(void* context)
 			}
 		}
 
-		syslog(LOG_INFO, "[%s] unhandled packet: size(%lu)", address.c_str(), packet.size());
+		syslog(LOG_INFO, "[%s] unhandled packet: size(%lu)", address.c_str(), (long unsigned int)packet.size());
 
 		/* dump unhandled packets */
 		if (appConfig.getDebug())
