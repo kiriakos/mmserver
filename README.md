@@ -32,10 +32,10 @@ Install:
 
  sudo make install
 
- cp /etc/mmserver.conf.sample ~/.mmserver/mmserver.conf
+ cp ../mmserver.conf ~/.mmserver/mmserver.conf
  chmod 0600 ~/.mmserver/mmserver.conf
 
- Edit ~/.mmserver/mmserver.conf accordingly..
+ Edit ~/.mmserver/mmserver.conf accordingly.
 
  Test run /usr/sbin/mmserver ~/.mmserver/mmserver.conf
 
