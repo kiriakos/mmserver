@@ -203,26 +203,11 @@ void GTKPreferences(GtkMenuItem* item __attribute__((unused)), gpointer uptr __a
 	if (strcmp(path, DEFAULT_CONFIG) == 0) {
 		system("mkdir -p ~/.mmserver/");
 		system("cp /usr/share/mmserver/mmserver.conf ~/.mmserver/");
-		snprintf(cmd, sizeof cmd, "gnome-text-editor ~/.mmserver/mmserver.conf");
+		snprintf(cmd, sizeof cmd, "gnome-text-editor ~/.mmserver/mmserver.conf &");
 	} else {
-		snprintf(cmd, sizeof cmd, "gnome-text-editor %s", path);
+		snprintf(cmd, sizeof cmd, "gnome-text-editor %s &", path);
 	}
 	system(cmd);
-	
-	pid_t pid = fork();
-	if (pid == 0)
-	{
-		for(int i = 3; i < getdtablesize(); i++)
-			close(i);
-		kill(getppid(), SIGKILL);
-		if (_argc > 2)
-			execl(_argv[0], _argv[0], "-f", _argv[2], NULL);
-		else
-			execl(_argv[0], _argv[0], NULL);
-		exit(1);
-	}
-	int ret;
-	waitpid(pid, &ret, 0);
 }
 
 void GTKTrayQuit(GtkMenuItem* item __attribute__((unused)), gpointer uptr __attribute__((unused))) 
