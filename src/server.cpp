@@ -203,9 +203,9 @@ void GTKPreferences(GtkMenuItem* item __attribute__((unused)), gpointer uptr __a
 	if (strcmp(path, DEFAULT_CONFIG) == 0) {
 		system("mkdir -p ~/.mmserver/");
 		system("cp /usr/share/mmserver/mmserver.conf ~/.mmserver/");
-		snprintf(cmd, sizeof cmd, "sensible-editor ~/.mmserver/mmserver.conf");
+		snprintf(cmd, sizeof cmd, "gnome-text-editor ~/.mmserver/mmserver.conf");
 	} else {
-		snprintf(cmd, sizeof cmd, "sensible-editor %s", path);
+		snprintf(cmd, sizeof cmd, "gnome-text-editor %s", path);
 	}
 	system(cmd);
 	
