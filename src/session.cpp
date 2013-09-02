@@ -270,7 +270,7 @@ void* MobileMouseSession(void* context)
 		if (pcrecpp::RE("SCROLL\x1e(-?\\d+)\x1e(-?\\d+)\x1e\x04").FullMatch(packet, &xs, &ys))
 		{
 			mousePointer.MouseWheelY(
-					-(int)strtol(ys.c_str(), 0x0, 10)
+					(int)strtol(ys.c_str(), 0x0, 10)
 					);
 			continue;
 		}
@@ -278,7 +278,7 @@ void* MobileMouseSession(void* context)
 		if (pcrecpp::RE("SCROLL\x1e(-?\\d+\\.\\d+)\x1e(-?\\d+\\.\\d+)\x1e\x04").FullMatch(packet, &xs, &ys))
 		{
 			mousePointer.MouseWheelY(
-					-(int)strtof(ys.c_str(), 0x0)
+					(int)strtof(ys.c_str(), 0x0)
 					);
 			continue;
 		}
