@@ -1,21 +1,14 @@
 #!/bin/sh
 
-# the following packages are required to build on arch linux
-# gcc and gcc-multilib should be compatible so if you have 
-pkgs="cmake gcc libx11 libxtst lib32-pcre pcre avahi libconfig gtk2"
-pkgc=0
+# ubuntu/debian dependencies
+sudo apt-get install\
+		cmake\
+		g++\
+		libx11-dev libxtst-dev\
+		libpcre3-dev\
+		libavahi-common-dev libavahi-client-dev\
+		libconfig++8-dev\
+		libgtk2.0-dev
 
-echo -n "Dependencies:"
-for dp in $pkgs
-do
-    [ $pkgc -gt 0 ] && echo -n ","
-    echo -n " $dp"
-    pkgc=$(( $pkgc + 1 ))
-done
-
-echo
-echo "
-gcc and gcc-multilib should be compatible so if you have one or the other do not replace it.
-"
-
-sudo pacman -S --needed $pkgs
+# alternative dependency list, purportedly for arch linux pacman
+# pkgs="cmake gcc libx11 libxtst lib32-pcre pcre avahi libconfig gtk2"
