@@ -186,9 +186,6 @@ void* MobileMouseSession(void* context)
 		}
 	}
 
-	struct timeval lastMouseEvent;
-	timerclear(&lastMouseEvent);
-
 	enum WindowMode {
 		WM_OTHER,
 		WM_MEDIA,
@@ -240,28 +237,23 @@ void* MobileMouseSession(void* context)
 
 		/* mouse movements */
 		std::string xp, yp;
-		/* PATCH0.2 // if (pcrecpp::RE("MOVE\x1e(-?\\d+)\x1e(-?\\d+)\x1e[10]\x04").FullMatch(packet, &xp, &yp)) */
 		if (pcrecpp::RE("MOVE\x1e(-?[\\d\x2e]+)\x1e(-?[\\d\x2e]+)\x1e[10]\x04").FullMatch(packet, &xp, &yp))
-        /*if (pcrecpp::RE("MOVE(.-?[0-9]+.[0-9]+){2}.[10].\x04").FullMatch(packet, &xp, &yp))*/
 		{
-			struct timeval currentMouseEvent;
-			gettimeofday(&currentMouseEvent, 0x0);
-			struct timeval diff;
-			timersub(&currentMouseEvent, &lastMouseEvent, &diff);
-			lastMouseEvent = currentMouseEvent;
-			if (appConfig.getMouseAcceleration() && diff.tv_sec == 0 && diff.tv_usec < 20000)
-			{
-				mousePointer.MouseMove(
-						(int)strtol(xp.c_str(), 0x0, 10) * 4,
-						(int)strtol(yp.c_str(), 0x0, 10) * 4
-						);
-
-			} else {
-				mousePointer.MouseMove(
-						(int)strtol(xp.c_str(), 0x0, 10),
-						(int)strtol(yp.c_str(), 0x0, 10)
-						);
+			int dx, dy;
+			dx = (int)strtol(xp.c_str(), NULL, 10);
+			dy = (int)strtol(yp.c_str(), NULL, 10);
+			
+			// accelerate rapid gesture only
+			// the effect is correct but some time normalization is needed
+			// accelerate if distance per unit time exceeds some threshold
+			// so keep the last mouse move time around, and divide it into the distance moved
+			if (appConfig.getMouseAcceleration() && (dx * dx + dy * dy > 100)) {
+				syslog(LOG_ERR, "accel dx %d dy %d", dx, dy);
+				dx *= 4;
+				dy *= 4;
 			}
+			
+			mousePointer.MouseMove(dx, dy);
 			continue;
 		}
 
@@ -386,6 +378,11 @@ void* MobileMouseSession(void* context)
 			}
 			else
 			{
+				// utf8 could contain a multibyte character.
+				// convert from presumed "keysym" to keycode now, as in SendKeys.
+				// (current code calls this keyCode, but treats it as keysym in SendKeys)
+				// compare original to keysym derivation; if different, prepend
+				// SHIFT to the keys list (hack for the basic case of capitalization)
 				keyCode = utf8[0];
 			}
 
@@ -400,6 +397,9 @@ void* MobileMouseSession(void* context)
 					keys.push_back(XK_Super_L);
 				if (*i == "ALT")
 					keys.push_back(XK_Alt_L);
+				// current mobile app doesn't seem to send shift modifiers
+				// but sends punctuation or capitalized characters directly
+				// eliminate test here, but infer shift if keycode != keysym above
 				if (*i == "SHIFT")
 					keys.push_back(XK_Shift_L);
 			}
