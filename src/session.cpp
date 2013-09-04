@@ -24,6 +24,7 @@
 #include <errno.h>
 #include <syslog.h>
 #include <unistd.h>
+#include <math.h>
 
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
@@ -186,6 +187,9 @@ void* MobileMouseSession(void* context)
 		}
 	}
 
+	struct timeval lastMouseEvent;
+	timerclear(&lastMouseEvent);
+
 	enum WindowMode {
 		WM_OTHER,
 		WM_MEDIA,
@@ -239,16 +243,23 @@ void* MobileMouseSession(void* context)
 		std::string xp, yp;
 		if (pcrecpp::RE("MOVE\x1e(-?[\\d\x2e]+)\x1e(-?[\\d\x2e]+)\x1e[10]\x04").FullMatch(packet, &xp, &yp))
 		{
+			struct timeval currentMouseEvent;
+			gettimeofday(&currentMouseEvent, NULL);
+			struct timeval diff;
+			timersub(&currentMouseEvent, &lastMouseEvent, &diff);
+			lastMouseEvent = currentMouseEvent;
+			double usecdiff = (diff.tv_sec * 1000000) + diff.tv_usec;
+			
 			int dx, dy;
+			double distance, speed;
 			dx = (int)strtol(xp.c_str(), NULL, 10);
 			dy = (int)strtol(yp.c_str(), NULL, 10);
+			distance = sqrt((dx * dx) + (dy * dy));
+			speed = distance / usecdiff;
 			
-			// accelerate rapid gesture only
-			// the effect is correct but some time normalization is needed
-			// accelerate if distance per unit time exceeds some threshold
-			// so keep the last mouse move time around, and divide it into the distance moved
-			if (appConfig.getMouseAcceleration() && (dx * dx + dy * dy > 100)) {
-				syslog(LOG_ERR, "accel dx %d dy %d", dx, dy);
+			// if acceleration is enabled, apply when estimated cursor speed exceeds given rate (pixels per microsecond)
+			// Threshold rate and/or acceleration factor might reasonably be user-configurable.
+			if (appConfig.getMouseAcceleration() && (speed > 0.0004)) {
 				dx *= 4;
 				dy *= 4;
 			}
