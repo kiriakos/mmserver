@@ -27,6 +27,8 @@ Configuration::Configuration()
 , m_debug(true)
 , m_port(9099)
 , m_mouseAccelerate(true)
+, m_mouseAccelerationSpeed(0.0004)
+, m_mouseAccelerationFactor(4)
 , m_keyboardLayout("iso-8859-1")
 {
 	char hostname[256];
@@ -81,6 +83,16 @@ void Configuration::Read(const std::string& file)
 	if (config.exists("mouse.accelerate"))
 	{
 		m_mouseAccelerate = (bool)config.lookup("mouse.accelerate");
+	}
+
+	if (config.exists("mouse.accelerationSpeed"))
+	{
+		m_mouseAccelerationSpeed = (double)config.lookup("mouse.accelerationSpeed");
+	}
+
+	if (config.exists("mouse.accelerationFactor"))
+	{
+		m_mouseAccelerationFactor = (int)config.lookup("mouse.accelerationFactor");
 	}
 
 	if (config.exists("keyboard.layout"))
@@ -163,6 +175,16 @@ const std::string& Configuration::getPassword() const
 bool Configuration::getMouseAcceleration() const
 {
 	return m_mouseAccelerate;
+}
+
+double Configuration::getMouseAccelerationSpeed() const
+{
+	return m_mouseAccelerationSpeed;
+}
+
+int Configuration::getMouseAccelerationFactor() const
+{
+	return m_mouseAccelerationFactor;
 }
 
 const std::string& Configuration::getKeyboardLayout() const

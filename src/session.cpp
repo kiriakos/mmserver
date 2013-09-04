@@ -258,10 +258,9 @@ void* MobileMouseSession(void* context)
 			speed = distance / usecdiff;
 			
 			// if acceleration is enabled, apply when estimated cursor speed exceeds given rate (pixels per microsecond)
-			// Threshold rate and/or acceleration factor might reasonably be user-configurable.
-			if (appConfig.getMouseAcceleration() && (speed > 0.0004)) {
-				dx *= 4;
-				dy *= 4;
+			if (appConfig.getMouseAcceleration() && (speed > appConfig.getMouseAccelerationSpeed())) {
+				dx *= appConfig.getMouseAccelerationFactor();
+				dy *= appConfig.getMouseAccelerationFactor();
 			}
 			
 			mousePointer.MouseMove(dx, dy);
