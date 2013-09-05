@@ -36,6 +36,7 @@
 #endif
 #define DEFAULT_CONFIG "/usr/share/mmserver/mmserver.conf"
 
+#include <libconfig.h++>
 #include "configuration.hpp"
 #include "avahi.hpp"
 #include "session.hpp"
@@ -74,9 +75,18 @@ int main(int argc, char* argv[])
 			snprintf(path, sizeof path, DEFAULT_CONFIG);
 		}
 		syslog(LOG_INFO, "reading configuration from %s", path);
-		appConfig.Read(path);
+		/* ParseExceptions should be allowed to terminate the program, so that
+		 * the user is prompted to fix the problem. FileIOExceptions indicate
+		 * that the config file is not found, so just use the default values. */
+		try {
+			appConfig.Read(path);
+		} catch (const libconfig::FileIOException &err) {
+			syslog(LOG_ERR, "Cannot find config file; using default values");
+		}
 	} else if (argc > 2 && strcmp(argv[1], "-f") == 0) {
 		syslog(LOG_INFO, "reading configuration from %s", argv[2]);
+		/* We do *not* catch file-not-found exceptions for explicitly named
+		 * config files; the user wanted one specifically, so don't default. */
 		appConfig.Read(argv[2]);
 	} else {
 		fprintf(stderr, "Mobile Mouse Server for Linux (%s.%s.%s) by Erik Lax <erik@datahack.se>\n",
