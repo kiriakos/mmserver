@@ -267,10 +267,9 @@ void* MobileMouseSession(void* context)
 			continue;
 		}
 
-		/* trackpad or free mouse scrolling */
+		/* mouse scrolling */
 		std::string xs, ys;
-		if (pcrecpp::RE("SCROLL\x1e(-?\\d+)\x1e(-?\\d+)\x1e\x04").FullMatch(packet, &xs, &ys) ||
-				pcrecpp::RE("SCROLL\x1e(-?\\d+\\.\\d+)\x1e(-?\\d+\\.\\d+)\x1e\x04").FullMatch(packet, &xs, &ys))
+		if (pcrecpp::RE("SCROLL\x1e(-?\\d+)\x1e(-?\\d+)\x1e\x04").FullMatch(packet, &xs, &ys))
 		{			
 			int dx, dy;
 			dx = appConfig.getMouseHorizontalScrolling() ? (int)strtol(xs.c_str(), NULL, 10) : 0;
