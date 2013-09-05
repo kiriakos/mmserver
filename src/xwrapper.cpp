@@ -56,16 +56,21 @@ void XMouseInterface::MouseRight(MouseState state)
 	XFlush(m_display);
 }
 
-void XMouseInterface::MouseWheelY(int offset)
+void XMouseInterface::MouseScroll(int dx, int dy)
 {
-	for(int i = abs(offset); i > 0; i--)
+	int i;
+	int xbutton = (dx > 0 ? 7 : 6); // right and left scroll buttons
+	int ybutton = (dy > 0 ? 5 : 4); // down and up scroll buttons
+	
+	for(i = abs(dx); i > 0; i--)
 	{
-		XTestFakeButtonEvent(m_display, offset>0?5:4,
-				True,
-				CurrentTime);
-		XTestFakeButtonEvent(m_display, offset>0?5:4,
-				False,
-				CurrentTime);
+		XTestFakeButtonEvent(m_display, xbutton, True, CurrentTime);
+		XTestFakeButtonEvent(m_display, xbutton, False, CurrentTime);
+	}
+	for(i = abs(dy); i > 0; i--)
+	{
+		XTestFakeButtonEvent(m_display, ybutton, True, CurrentTime);
+		XTestFakeButtonEvent(m_display, ybutton, False, CurrentTime);
 	}
 	XFlush(m_display);
 }

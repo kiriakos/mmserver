@@ -38,7 +38,7 @@ class XMouseInterface
 
 		void MouseLeft(MouseState state);
 		void MouseRight(MouseState state);
-		void MouseWheelY(int offset);
+		void MouseScroll(int x, int y);
 		void MouseMove(int x, int y);
 	private:
 		Display *m_display; 

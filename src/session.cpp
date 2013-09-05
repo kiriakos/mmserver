@@ -271,17 +271,20 @@ void* MobileMouseSession(void* context)
 		std::string xs, ys;
 		if (pcrecpp::RE("SCROLL\x1e(-?\\d+)\x1e(-?\\d+)\x1e\x04").FullMatch(packet, &xs, &ys))
 		{
-			mousePointer.MouseWheelY(
-					(int)strtol(ys.c_str(), 0x0, 10)
-					);
+			int dx, dy;
+			dx = (int)strtol(xs.c_str(), NULL, 10);
+			dy = (int)strtol(ys.c_str(), NULL, 10);
+			mousePointer.MouseScroll(dx, dy);
 			continue;
 		}
 		/* free mouse */
 		if (pcrecpp::RE("SCROLL\x1e(-?\\d+\\.\\d+)\x1e(-?\\d+\\.\\d+)\x1e\x04").FullMatch(packet, &xs, &ys))
 		{
-			mousePointer.MouseWheelY(
-					(int)strtof(ys.c_str(), 0x0)
-					);
+			/* same as trackpad scrolling -- unless usage suggests a different algorithm would be better */
+			int dx, dy;
+			dx = (int)strtol(xs.c_str(), NULL, 10);
+			dy = (int)strtol(ys.c_str(), NULL, 10);
+			mousePointer.MouseScroll(dx, dy);
 			continue;
 		}
 
