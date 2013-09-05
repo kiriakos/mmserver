@@ -267,27 +267,28 @@ void* MobileMouseSession(void* context)
 			continue;
 		}
 
-		/* trackpad scrolling */
+		/* trackpad or free mouse scrolling */
 		std::string xs, ys;
-		if (pcrecpp::RE("SCROLL\x1e(-?\\d+)\x1e(-?\\d+)\x1e\x04").FullMatch(packet, &xs, &ys))
-		{
+		if (pcrecpp::RE("SCROLL\x1e(-?\\d+)\x1e(-?\\d+)\x1e\x04").FullMatch(packet, &xs, &ys) ||
+				pcrecpp::RE("SCROLL\x1e(-?\\d+\\.\\d+)\x1e(-?\\d+\\.\\d+)\x1e\x04").FullMatch(packet, &xs, &ys))
+		{			
 			int dx, dy;
 			dx = appConfig.getMouseHorizontalScrolling() ? (int)strtol(xs.c_str(), NULL, 10) : 0;
 			dy = (int)strtol(ys.c_str(), NULL, 10);
+			
+			// scrollmax is at least 1
+			int maxd = appConfig.getMouseScrollMax();
+			if (abs(dx) > maxd) {
+				dx = maxd * dx / abs(dx);
+			}
+			if (abs(dy) > maxd) {
+				dy = maxd * dy / abs(dy);
+			}
+			
 			mousePointer.MouseScroll(dx, dy);
 			continue;
 		}
-		/* free mouse */
-		if (pcrecpp::RE("SCROLL\x1e(-?\\d+\\.\\d+)\x1e(-?\\d+\\.\\d+)\x1e\x04").FullMatch(packet, &xs, &ys))
-		{
-			/* same as trackpad scrolling -- unless usage suggests a different algorithm would be better */
-			int dx, dy;
-			dx = appConfig.getMouseHorizontalScrolling() ? (int)strtol(xs.c_str(), NULL, 10) : 0;
-			dy = (int)strtol(ys.c_str(), NULL, 10);
-			mousePointer.MouseScroll(dx, dy);
-			continue;
-		}
-
+		
 		/* zooming */
 		std::string zoom;
 		if (pcrecpp::RE("ZOOM\x1e(-?\\d+)\x04").FullMatch(packet, &zoom))

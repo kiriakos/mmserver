@@ -30,6 +30,7 @@ Configuration::Configuration()
 , m_mouseAccelerationSpeed(0.0004)
 , m_mouseAccelerationFactor(4)
 , m_mouseHorizontalScrolling(false)
+, m_mouseScrollMax(1)
 , m_keyboardLayout("iso-8859-1")
 {
 	char hostname[256];
@@ -99,6 +100,15 @@ void Configuration::Read(const std::string& file)
 	if (config.exists("mouse.horizontalScrolling"))
 	{
 		m_mouseHorizontalScrolling = (bool)config.lookup("mouse.horizontalScrolling");
+	}
+
+	if (config.exists("mouse.scrollMax"))
+	{
+		m_mouseScrollMax = (int)config.lookup("mouse.scrollMax");
+		if (m_mouseScrollMax < 1) {
+			syslog(LOG_ERR, "mouse.scrollMax must be at least 1");
+			m_mouseScrollMax = 1;
+		}
 	}
 
 	if (config.exists("keyboard.layout"))
@@ -196,6 +206,11 @@ int Configuration::getMouseAccelerationFactor() const
 bool Configuration::getMouseHorizontalScrolling() const
 {
 	return m_mouseHorizontalScrolling;
+}
+
+int Configuration::getMouseScrollMax() const
+{
+	return m_mouseScrollMax;
 }
 
 const std::string& Configuration::getKeyboardLayout() const
