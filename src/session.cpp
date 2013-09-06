@@ -160,33 +160,6 @@ void* MobileMouseSession(void* context)
 		}
 	}
 
-	/* ugly hack: switch to MEDIA and back to OTHER in order to remove spinner */
-	{
-		const char* m;
-		m = "SWITCHMODE\x1e"
-			"MEDIA\x1e"
-			"\x1e"
-			"\x1e"
-			"\x04";
-		if (write(client, (const char*)m, strlen((const char*)m)) < 1)
-		{
-			syslog(LOG_INFO, "[%s] disconnected (write failed: %s)", address.c_str(), strerror(errno));
-			close(client);
-			return NULL;
-		}
-		m = "SWITCHMODE\x1e"
-			"OTHER\x1e"
-			"\x1e"
-			"\x1e"
-			"\x04";
-		if (write(client, (const char*)m, strlen((const char*)m)) < 1)
-		{
-			syslog(LOG_INFO, "[%s] disconnected (write failed: %s)", address.c_str(), strerror(errno));
-			close(client);
-			return NULL;
-		}
-	}
-
 	struct timeval lastMouseEvent;
 	timerclear(&lastMouseEvent);
 
