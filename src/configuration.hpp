@@ -36,6 +36,7 @@ class Configuration
 		const std::string& getHostname() const;
 		bool getDebug() const;
 		unsigned short getPort() const;
+		bool getZeroconf() const;
 		const std::set<std::string>& getDevices() const;
 		const std::string& getPassword() const;
 		bool getMouseAcceleration() const;
@@ -51,7 +52,8 @@ class Configuration
 		std::string m_hostname;
 		bool m_debug;
 		unsigned short m_port;
-
+		bool m_zeroconf;
+		
 		std::set<std::string> m_devices;
 		std::string m_password;
 

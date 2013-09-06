@@ -26,6 +26,7 @@ Configuration::Configuration()
 : m_hostname("localhost")
 , m_debug(true)
 , m_port(9099)
+, m_zeroconf(true)
 , m_mouseAccelerate(true)
 , m_mouseAccelerationSpeed(0.0004)
 , m_mouseAccelerationFactor(4)
@@ -55,6 +56,11 @@ void Configuration::Read(const std::string& file)
 	if (config.exists("server.port"))
 	{
 		m_port = (short)(unsigned int)config.lookup("server.port");
+	}
+
+	if (config.exists("server.zeroconf"))
+	{
+		m_zeroconf = (bool)config.lookup("server.zeroconf");
 	}
 
 	if (config.exists("device.id"))
@@ -176,6 +182,11 @@ bool Configuration::getDebug() const
 unsigned short Configuration::getPort() const
 {
 	return m_port;
+}
+
+bool Configuration::getZeroconf() const
+{
+	return m_zeroconf;
 }
 
 const std::set<std::string>& Configuration::getDevices() const

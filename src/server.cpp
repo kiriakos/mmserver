@@ -101,8 +101,10 @@ int main(int argc, char* argv[])
 	syslog(LOG_INFO, "started on port %d", appConfig.getPort());
 	daemon(1, 1);
 
-	StartAvahi(appConfig);
-
+	if (appConfig.getZeroconf()) {
+		StartAvahi(appConfig);
+	}
+	
 	/* bind.. */
 	struct sockaddr_in serv_addr;
 	bzero((char *)&serv_addr, sizeof serv_addr);
