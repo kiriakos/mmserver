@@ -320,7 +320,8 @@ void* MobileMouseSession(void* context)
 				if (utf8 == "NUM_MULTIPLY") keyCode = XK_KP_Multiply;
 				if (utf8 == "NUM_SUBTRACT") keyCode = XK_KP_Subtract;
 				if (utf8 == "NUM_ADD") keyCode = XK_KP_Add;
-				if (utf8 == "Enter") keyCode = XK_KP_Enter;
+				if (utf8 == "NUM_ENTER") keyCode = XK_KP_Enter;
+				if (utf8 == "NUM_EQUAL") keyCode = XK_KP_Equal;
 				if (utf8 == "NUM_DECIMAL") keyCode = XK_KP_Decimal;
 				if (utf8 == "NUM0") keyCode = XK_KP_0;
 				if (utf8 == "NUM1") keyCode = XK_KP_1;
@@ -332,7 +333,15 @@ void* MobileMouseSession(void* context)
 				if (utf8 == "NUM7") keyCode = XK_KP_7;
 				if (utf8 == "NUM8") keyCode = XK_KP_8;
 				if (utf8 == "NUM9") keyCode = XK_KP_9;
-
+				
+				// non-num-locked keypad equivalents are received directly (as HOME, END, PGUP, etc)
+				// so prefix keypad input with shift to interpet as regular numerals
+				if (keyCode == XK_KP_1 || keyCode == XK_KP_2 || keyCode == XK_KP_3
+						|| keyCode == XK_KP_4 || keyCode == XK_KP_5 || keyCode == XK_KP_6
+						|| keyCode == XK_KP_7 || keyCode == XK_KP_8 || keyCode == XK_KP_9) {
+					keys.push_back(XK_Shift_L);
+				}
+				
 				/* function page */
 				if (utf8 == "ESCAPE") keyCode = XK_Escape;
 				if (utf8 == "DELETE") keyCode = XK_Delete;
