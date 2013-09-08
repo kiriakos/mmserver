@@ -37,6 +37,7 @@ class XMouseInterface
 		~XMouseInterface();
 
 		void MouseLeft(MouseState state);
+		void MouseMiddle(MouseState state);
 		void MouseRight(MouseState state);
 		void MouseScroll(int x, int y);
 		void MouseMove(int x, int y);

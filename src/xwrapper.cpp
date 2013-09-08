@@ -48,6 +48,14 @@ void XMouseInterface::MouseLeft(MouseState state)
 	XFlush(m_display);
 }
 
+void XMouseInterface::MouseMiddle(MouseState state)
+{
+	XTestFakeButtonEvent(m_display, 2,
+			state==BTN_DOWN?True:False,
+			CurrentTime);
+	XFlush(m_display);
+}
+
 void XMouseInterface::MouseRight(MouseState state)
 {
 	XTestFakeButtonEvent(m_display, 3,

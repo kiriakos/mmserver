@@ -420,10 +420,21 @@ void* MobileMouseSession(void* context)
 		if (pcrecpp::RE("HOTKEY\x1e(B[12])\x04").FullMatch(packet, &hotkey))
 		{
 			std::string command;
-			if (hotkey == "B1")
+			
+			// B1 is invoked when scroll pad is tapped (but not scrolled),
+			// like clicking the middle mouse button of a scroll mouse.
+			// So, if no hotkey command is defined, fake a middle button click.
+			if (hotkey == "B1") {
 				command = appConfig.getHotKeyCommand(5);
-			if (hotkey == "B2")
+				if (command.empty()) {
+					mousePointer.MouseMiddle(XMouseInterface::BTN_DOWN);
+					mousePointer.MouseMiddle(XMouseInterface::BTN_UP);
+				}
+			}
+			// I don't know how to invoke B2.
+			if (hotkey == "B2") {
 				command = appConfig.getHotKeyCommand(6);
+			}
 			if (!command.empty())
 				system(command.c_str());
 			continue;
