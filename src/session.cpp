@@ -282,6 +282,7 @@ void* MobileMouseSession(void* context)
 		std::string chr, utf8, modifier;
 		if (pcrecpp::RE("KEY\x1e(.*?)\x1e(.*?)\x1e(.*?)\x04").FullMatch(packet, &chr, &utf8, &modifier))
 		{
+			std::list<int> keys;
 			int keyCode = 0;
 			if (chr == "-61")
 			{
@@ -364,15 +365,15 @@ void* MobileMouseSession(void* context)
 			}
 			else
 			{
-				// utf8 could contain a multibyte character.
-				// convert from presumed "keysym" to keycode now, as in SendKeys.
-				// (current code calls this keyCode, but treats it as keysym in SendKeys)
-				// compare original to keysym derivation; if different, prepend
-				// SHIFT to the keys list (hack for the basic case of capitalization)
+				// utf8 could contain multibyte characters; currently unhandled
 				keyCode = utf8[0];
+				
+				// check if the shift key is required to generate input character (hack)
+				if (keyBoard.keysymIsShiftVariant((KeySym)strtol(chr.c_str(), NULL, 10))) {
+					keys.push_back(XK_Shift_L);
+				}
 			}
 
-			std::list<int> keys;
 			std::list<std::string> modlist = SplitString(modifier, '+');
 			for (std::list<std::string>::const_iterator i = modlist.begin();
 					i != modlist.end(); i++)
@@ -386,9 +387,10 @@ void* MobileMouseSession(void* context)
 				// current mobile app doesn't seem to send shift modifiers
 				// but sends punctuation or capitalized characters directly
 				// eliminate test here, but infer shift if keycode != keysym above
-				if (*i == "SHIFT")
-					keys.push_back(XK_Shift_L);
+				/*if (*i == "SHIFT")
+					keys.push_back(XK_Shift_L);*/
 			}
+			
 			if (keyCode > 0)
 			{
 				keys.push_back(keyCode);

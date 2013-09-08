@@ -19,7 +19,7 @@
 
 #include "xwrapper.hpp"
 
-#include <X11/extensions/XTest.h> 
+#include <X11/extensions/XTest.h>
 #include <stdexcept>
 #include <stdlib.h>
 
@@ -103,6 +103,19 @@ void XKeyboardInterface::SendKey(int keycode)
 	std::list<int> keys;
 	keys.push_back(keycode);
 	SendKey(keys);
+}
+
+bool XKeyboardInterface::keysymIsShiftVariant(KeySym key)
+{
+	// get the physical keycode associated with this key
+	KeyCode basekey = XKeysymToKeycode(m_display, key);
+	
+	// check if shift-modified variant keysym of base key matches input keysym 
+	if (XKeycodeToKeysym(m_display, basekey, 1) == key) {
+		return true;
+	}
+	
+	return false;
 }
 
 void XKeyboardInterface::SendKey(const std::list<int>& keycode)
