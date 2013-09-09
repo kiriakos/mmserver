@@ -192,16 +192,16 @@ int main(int argc, char* argv[])
 #ifdef TOOLBAR_ICON
 void GTKTrayAbout(GtkMenuItem* item __attribute__((unused)), gpointer uptr __attribute__((unused))) 
 {
-	const gchar* authors[] = { "Erik Lax <erik@datahack.se>", NULL }; 
+	const gchar* authors[] = { "Erik Lax <erik@datahack.se>\nhttp://sourceforge.net/projects/mmlinuxserver/\n\nKiriakos Krastillis\nhttp://github.com/kiriakos/mmserver\n\nJim DeVona\nhttp://github.com/anoved/mmserver", NULL }; 
 	const gchar* license = "GNU GENERAL PUBLIC LICENSE\nVersion 2, June 1991\n\nhttp://www.gnu.org/licenses/gpl-2.0.txt";
 
 	GtkWidget* about = gtk_about_dialog_new();
-	gtk_about_dialog_set_name((GtkAboutDialog*)about, "Mobile Mouse Linux Server");
+	gtk_about_dialog_set_name((GtkAboutDialog*)about, "Mobile Mouse Server for Linux");
 	gtk_window_set_icon((GtkWindow*)about, gtk_widget_render_icon(about, GTK_STOCK_ABOUT, GTK_ICON_SIZE_MENU, NULL));
-	gtk_about_dialog_set_copyright((GtkAboutDialog*)about, "Copyright (C) 2011 Erik Lax");
+	gtk_about_dialog_set_copyright((GtkAboutDialog*)about, "Copyright (C) 2011 Erik Lax,\n2013 Kiriakos Krastillis, Jim DeVona");
 	gtk_about_dialog_set_version((GtkAboutDialog*)about, MMSERVER_VERSION_MAJOR"."MMSERVER_VERSION_MINOR"."MMSERVER_VERSION_PATCH);
-	gtk_about_dialog_set_website((GtkAboutDialog*)about, "http://sourceforge.net/projects/mmlinuxserver/");
-	gtk_about_dialog_set_comments((GtkAboutDialog*)about, "An unofficial Mobile Mouse (http://www.mobilemouse.com) server for Linux (X11) which implements mouse, keyboard and application functionality.");
+	gtk_about_dialog_set_website((GtkAboutDialog*)about, "https://github.com/anoved/mmserver/");
+	gtk_about_dialog_set_comments((GtkAboutDialog*)about, "An unofficial Mobile Mouse server for Linux. Use your iOS or Android device as a network mouse and keyboard for your Linux computer using Mobile Mouse and this software.");
 	gtk_about_dialog_set_authors((GtkAboutDialog*)about, authors);
 	gtk_about_dialog_set_license((GtkAboutDialog*)about, license);
 
