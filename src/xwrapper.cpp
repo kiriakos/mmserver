@@ -20,6 +20,7 @@
 #include "xwrapper.hpp"
 
 #include <X11/extensions/XTest.h>
+#include <X11/XKBlib.h>
 #include <stdexcept>
 #include <stdlib.h>
 
@@ -119,7 +120,7 @@ bool XKeyboardInterface::keysymIsShiftVariant(KeySym key)
 	KeyCode basekey = XKeysymToKeycode(m_display, key);
 	
 	// check if shift-modified variant keysym of base key matches input keysym 
-	if (XKeycodeToKeysym(m_display, basekey, 1) == key) {
+	if (XkbKeycodeToKeysym(m_display, basekey, 0, 1) == key) {
 		return true;
 	}
 	
