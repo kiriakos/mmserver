@@ -323,6 +323,7 @@ void* MobileMouseSession(void* context)
 				if (utf8 == "NUM_ENTER") keyCode = XK_KP_Enter;
 				if (utf8 == "NUM_EQUAL") keyCode = XK_KP_Equal;
 				if (utf8 == "NUM_DECIMAL") keyCode = XK_KP_Decimal;
+				if (utf8 == "INSERT") keyCode = XK_KP_Insert;
 				if (utf8 == "NUM0") keyCode = XK_KP_0;
 				if (utf8 == "NUM1") keyCode = XK_KP_1;
 				if (utf8 == "NUM2") keyCode = XK_KP_2;
@@ -336,7 +337,8 @@ void* MobileMouseSession(void* context)
 				
 				// non-num-locked keypad equivalents are received directly (as HOME, END, PGUP, etc)
 				// so prefix keypad input with shift to interpet as regular numerals
-				if (keyCode == XK_KP_1 || keyCode == XK_KP_2 || keyCode == XK_KP_3
+				if (keyCode == XK_KP_0 ||
+						keyCode == XK_KP_1 || keyCode == XK_KP_2 || keyCode == XK_KP_3
 						|| keyCode == XK_KP_4 || keyCode == XK_KP_5 || keyCode == XK_KP_6
 						|| keyCode == XK_KP_7 || keyCode == XK_KP_8 || keyCode == XK_KP_9) {
 					keys.push_back(XK_Shift_L);
