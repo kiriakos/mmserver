@@ -234,7 +234,7 @@ const std::string Configuration::getHotKeyName(unsigned int id) const
 	std::map<unsigned int, std::pair<std::string, std::string> >::const_iterator i;
 	i = m_hotkeys.find(id);
 	if (i == m_hotkeys.end())
-		return "undefined";
+		return "";
 	return i->second.first;
 }
 
