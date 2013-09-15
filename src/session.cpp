@@ -200,6 +200,17 @@ void* MobileMouseSession(void* context)
 		{
 			if (option == "CLIPBOARDSYNC") {
 				syslog(LOG_INFO, "Clipboard sync: %s", optval.c_str());
+				if (optval == "1") {
+					
+					char m[1024];
+					snprintf(m, sizeof(m), "CLIPBOARDUPDATE\x1e" "TEXT\x1f" "Hello, world!\x04");
+					if (write(client, (const char*)m, strlen((const char*)m)) < 1)
+					{
+						syslog(LOG_INFO, "[%s] disconnected (write failed: %s)", address.c_str(), strerror(errno));
+						close(client);
+						break;
+					}
+				}
 			}
 			else if (option == "PRESENTATION") {
 				/* Presumably concerns the extra in-app purchase "pro presentation module" */
