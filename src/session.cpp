@@ -193,7 +193,24 @@ void* MobileMouseSession(void* context)
 			packet_buffer.append(buffer, n);
 			continue;
 		}
-
+		
+		/* options */
+		std::string option, optval;
+		if (pcrecpp::RE("SETOPTION\x1e(.*?)\x1e(.*?)\x04").FullMatch(packet, &option, &optval))
+		{
+			if (option == "CLIPBOARDSYNC") {
+				syslog(LOG_INFO, "Clipboard sync: %s", optval.c_str());
+			}
+			else if (option == "PRESENTATION") {
+				/* Presumably concerns the extra in-app purchase "pro presentation module" */
+				syslog(LOG_INFO, "Presentation mode: %s", optval.c_str());
+			}
+			else {
+				syslog(LOG_ERR, "Unknown option: %s", option.c_str());
+			}
+			continue;
+		}
+		
 		/* mouse clicks */
 		std::string key, state;
  		if (pcrecpp::RE("CLICK\x1e([LR])\x1e([DU])\x1e\x04").FullMatch(packet, &key, &state))
