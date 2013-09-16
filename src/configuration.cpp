@@ -167,6 +167,21 @@ void Configuration::Read(const std::string& file)
 				(const char*)config.lookup("mouse.hotkeys.key2.command")
 				);
 	}
+	
+	/* gesture commands */
+
+#define GESTURE_HOTKEY_CONFIG(path, key) if(config.exists((path))) m_hotkeys[(key)] = std::make_pair("", (const char*)config.lookup((path)))
+	GESTURE_HOTKEY_CONFIG("gestures.twofingerdoubletap", 7);
+	GESTURE_HOTKEY_CONFIG("gestures.threefingersingletap", 8);
+	GESTURE_HOTKEY_CONFIG("gestures.threefingerdoubletap", 9);
+	GESTURE_HOTKEY_CONFIG("gestures.fourfingerpinch", 10);
+	GESTURE_HOTKEY_CONFIG("gestures.fourfingerspread", 11);
+	GESTURE_HOTKEY_CONFIG("gestures.fourfingerswipeleft", 12);
+	GESTURE_HOTKEY_CONFIG("gestures.fourfingerswiperight", 13);
+	GESTURE_HOTKEY_CONFIG("gestures.fourfingerswipeup", 14);
+	GESTURE_HOTKEY_CONFIG("gestures.fourfingerswipedown", 15);
+#undef GESTURE_HOTKEY_CONFIG
+
 }
 
 const std::string& Configuration::getHostname() const
