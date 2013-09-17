@@ -25,6 +25,7 @@
 #include <memory.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <linux/limits.h>
 
 #define TOOLBAR_ICON
 #ifdef TOOLBAR_ICON
