@@ -36,6 +36,7 @@
 #define TOOLBAR_ICON_CONNECTED "/usr/share/mmserver/icons/mm-connected.svg"
 #endif
 #define DEFAULT_CONFIG "/usr/share/mmserver/mmserver.conf"
+#define USER_CONFIG_DIR ".mmserver"
 
 #include <libconfig.h++>
 #include "configuration.hpp"
@@ -99,9 +100,8 @@ int main(int argc, char* argv[])
 		}
 		catch (const libconfig::FileIOException &err) {
 			syslog(LOG_ERR, "Cannot read configuration from: %s", path);
+			exit(1);
 		}
-	} else {
-		path[0] = '\0';
 	}
 
 	syslog(LOG_INFO, "started on port %d", appConfig.getPort());
@@ -209,6 +209,7 @@ int main(int argc, char* argv[])
  * 
  * Result:
  *   p is set to path to user config file if found
+ *   (user config file may be created as a copy of system config file)
  *   p is not modified if no user config file is found
  */
 bool CheckUserConfig(char *p, size_t psize) {
@@ -219,10 +220,14 @@ bool CheckUserConfig(char *p, size_t psize) {
 		return false;
 	}
 	
-	snprintf(upath, sizeof upath, "%s/.mmserver/mmserver.conf", getenv("HOME"));
+	snprintf(upath, sizeof upath, "%s/%s/mmserver.conf", getenv("HOME"), USER_CONFIG_DIR);
 	if (!FileExists(upath)) {
-		// to do: try to install /usr/share/mmserver/mmserver.conf in upath
-		return false;
+		// attempt to install system conf file in user dir before failing
+		if (	system("mkdir -p ~/" USER_CONFIG_DIR "/ >/dev/null 2>&1 ") ||
+				system("cp " DEFAULT_CONFIG " ~/" USER_CONFIG_DIR "/ >/dev/null 2>&1")) {
+			return false;
+		}
+		syslog(LOG_INFO, "creating %s", upath);
 	}
 	
 	strncpy(p, upath, psize);
@@ -246,7 +251,7 @@ bool CheckSystemConfig(char *p, size_t psize) {
 	
 	char cpath[PATH_MAX];
 	
-	snprintf(cpath, sizeof cpath, "/usr/share/mmserver/mmserver.conf");
+	snprintf(cpath, sizeof cpath, DEFAULT_CONFIG);
 	if (!FileExists(cpath)) {
 		return false;
 	}
@@ -290,15 +295,7 @@ void GTKTrayAbout(GtkMenuItem* item __attribute__((unused)), gpointer uptr __att
 void GTKPreferences(GtkMenuItem* item __attribute__((unused)), gpointer uptr __attribute__((unused))) 
 {
 	char cmd[PATH_MAX];
-	if (strcmp(path, DEFAULT_CONFIG) == 0) {
-		system("mkdir -p ~/.mmserver/");
-		system("cp /usr/share/mmserver/mmserver.conf ~/.mmserver/");
-		snprintf(cmd, sizeof cmd, "gnome-text-editor ~/.mmserver/mmserver.conf &");
-	} else {
-		if (strlen(path) > 0) {
-			snprintf(cmd, sizeof cmd, "gnome-text-editor %s &", path);
-		}
-	}
+	snprintf(cmd, sizeof cmd, "gnome-text-editor %s &", path);
 	system(cmd);
 }
 
