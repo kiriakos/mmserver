@@ -84,18 +84,16 @@ int main(int argc, char* argv[])
 		} catch (const libconfig::FileIOException &err) {
 			syslog(LOG_ERR, "Cannot find config file; using default values");
 		}
-	} else if (argc > 2 && strcmp(argv[1], "-f") == 0) {
-		syslog(LOG_INFO, "reading configuration from %s", argv[2]);
+	} else if (argc == 2) {
+		syslog(LOG_INFO, "reading configuration from %s", argv[1]);
 		/* We do *not* catch file-not-found exceptions for explicitly named
 		 * config files; the user wanted one specifically, so don't default. */
-		appConfig.Read(argv[2]);
+		appConfig.Read(argv[1]);
 	} else {
-		fprintf(stderr, "Mobile Mouse Server for Linux (%s.%s.%s) by Erik Lax <erik@datahack.se>\n",
-			MMSERVER_VERSION_MAJOR,
-			MMSERVER_VERSION_MINOR,
-			MMSERVER_VERSION_PATCH	
-		);
-		fprintf(stderr, "Run: %s /path/to/mmserver.conf\n", argv[0]);
+		fprintf(stderr, "Mobile Mouse Server for Linux (%s.%s.%s)\n",
+				MMSERVER_VERSION_MAJOR, MMSERVER_VERSION_MINOR, MMSERVER_VERSION_PATCH);
+		fprintf(stderr, "Website: https://github.com/anoved/mmserver/\n");
+		fprintf(stderr, "Usage: %s [/path/to/mmserver.conf]\n", argv[0]);
 		return 1;
 	}
 
