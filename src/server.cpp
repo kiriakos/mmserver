@@ -52,9 +52,17 @@ char path[PATH_MAX];
 int _argc;
 char** _argv;
 
+
+bool CheckConfig(char *p, size_t psize);
+bool CheckUserConfig(char *fpath, size_t fpathlen);
+bool CheckSystemConfig(char *fpath, size_t fpathlen);
+bool FileExists(const char *filePath);
+
 int main(int argc, char* argv[])
 {
 	signal(SIGPIPE, SIG_IGN);
+	
+	bool foundConfig = false;
 	
 	// store for later
 	_argc = argc;
@@ -67,34 +75,30 @@ int main(int argc, char* argv[])
 	/* parse configuration */
 	Configuration appConfig;
 	if (argc == 1) {
-		if (getenv("HOME")) {
-			snprintf(path, sizeof path, "%s/.mmserver/mmserver.conf", getenv("HOME"));
-			struct stat st;
-			if (stat(path, &st) != 0 || !(st.st_mode & S_IFREG))
-				snprintf(path, sizeof path, DEFAULT_CONFIG);
-		} else {
-			snprintf(path, sizeof path, DEFAULT_CONFIG);
-		}
-		syslog(LOG_INFO, "reading configuration from %s", path);
-		/* ParseExceptions should be allowed to terminate the program, so that
-		 * the user is prompted to fix the problem. FileIOExceptions indicate
-		 * that the config file is not found, so just use the default values. */
-		try {
-			appConfig.Read(path);
-		} catch (const libconfig::FileIOException &err) {
-			syslog(LOG_ERR, "Cannot find config file; using default values");
-		}
+		/* look for config file in user or system directory */
+		foundConfig = CheckConfig(path, sizeof path);
 	} else if (argc == 2) {
-		syslog(LOG_INFO, "reading configuration from %s", argv[1]);
-		/* We do *not* catch file-not-found exceptions for explicitly named
-		 * config files; the user wanted one specifically, so don't default. */
-		appConfig.Read(argv[1]);
+		/* interpret the argument as the path to a particular config file */
+		snprintf(path, sizeof path, "%s", argv[1]);
+		foundConfig = true;
 	} else {
 		fprintf(stderr, "Mobile Mouse Server for Linux (%s.%s.%s)\n",
 				MMSERVER_VERSION_MAJOR, MMSERVER_VERSION_MINOR, MMSERVER_VERSION_PATCH);
 		fprintf(stderr, "Website: https://github.com/anoved/mmserver/\n");
 		fprintf(stderr, "Usage: %s [/path/to/mmserver.conf]\n", argv[0]);
 		return 1;
+	}
+
+	if (foundConfig) {
+		syslog(LOG_INFO, "reading configuration from %s", path);
+		try {
+			appConfig.Read(path);
+		}
+		catch (const libconfig::FileIOException &err) {
+			syslog(LOG_ERR, "Cannot read configuration from: %s", path);
+		}
+	} else {
+		path[0] = '\0';
 	}
 
 	syslog(LOG_INFO, "started on port %d", appConfig.getPort());
@@ -188,6 +192,84 @@ int main(int argc, char* argv[])
 	return 0;
 }
 
+/*
+ * Parameters:
+ *   p, return path
+ *   psize, length of return path string
+ * 
+ * Return Value:
+ *   true if a config file is found
+ *   false if a config file is not found
+ * 
+ * Result:
+ *   p is set to path to config file if found
+ *   p is not modified if no config file is found
+ */
+bool CheckConfig(char *p, size_t psize) {
+	
+	if (CheckUserConfig(p, psize)) {
+		return true;
+	}
+	
+	if (CheckSystemConfig(p, psize)) {
+		return true;
+	}
+	
+	return false;
+}
+
+/*
+ * consider just don't show preferences edit option if userconfig not found,
+ * rather than allowing the edit prefs option to open some other such file.
+ *
+ * Behaves as CheckConfig, specific to config file in user dir
+ */
+bool CheckUserConfig(char *fpath, size_t fpathlen) {
+	
+	char upath[PATH_MAX];
+	
+	if (!getenv("HOME")) {
+		return false;
+	}
+	
+	snprintf(upath, sizeof upath, "%s/.mmserver/mmserver.conf", getenv("HOME"));
+	if (!FileExists(upath)) {
+		// to do: try to install /usr/share/mmserver/mmserver.conf in upath
+		return false;
+	}
+	
+	strncpy(fpath, upath, fpathlen);
+	return true;
+}
+
+/*
+ * Behaves as CheckConfig, specific to config file is system dir
+ */
+bool CheckSystemConfig(char *fpath, size_t fpathlen) {
+	
+	char cpath[PATH_MAX];
+	
+	snprintf(cpath, sizeof cpath, "/usr/share/mmserver/mmserver.conf");
+	if (!FileExists(cpath)) {
+		return false;
+	}
+	
+	strncpy(fpath, cpath, fpathlen);
+	return true; 
+}
+
+/* Return Value:
+ *   true if file at filePath exists and is a regular file
+ *   false otherwise
+ */
+bool FileExists(const char *filePath) {
+	struct stat st;
+	if (stat(filePath, &st) != 0 || !(st.st_mode & S_IFREG)) {
+		return false;
+	}
+	return true;
+}
+
 #ifdef TOOLBAR_ICON
 void GTKTrayAbout(GtkMenuItem* item __attribute__((unused)), gpointer uptr __attribute__((unused))) 
 {
@@ -216,7 +298,10 @@ void GTKPreferences(GtkMenuItem* item __attribute__((unused)), gpointer uptr __a
 		system("cp /usr/share/mmserver/mmserver.conf ~/.mmserver/");
 		snprintf(cmd, sizeof cmd, "gnome-text-editor ~/.mmserver/mmserver.conf &");
 	} else {
-		snprintf(cmd, sizeof cmd, "gnome-text-editor %s &", path);
+		if (strlen(path) > 0) {
+			snprintf(cmd, sizeof cmd, "gnome-text-editor %s &", path);
+		}
+		// to-do: just don't create this menu option if no path (foundConfig false)
 	}
 	system(cmd);
 }
