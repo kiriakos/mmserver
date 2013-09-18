@@ -45,15 +45,13 @@
 #include "version.hpp.in"
 
 #ifdef TOOLBAR_ICON
-void* GTKStartup(void *);
+void* GTKStartup(void *arg);
 GtkStatusIcon* tray = NULL;
 #endif
 char path[PATH_MAX];
 int _argc;
 char** _argv;
 
-
-bool CheckConfig(char *p, size_t psize);
 bool CheckUserConfig(char *fpath, size_t fpathlen);
 bool CheckSystemConfig(char *fpath, size_t fpathlen);
 bool FileExists(const char *filePath);
@@ -62,7 +60,7 @@ int main(int argc, char* argv[])
 {
 	signal(SIGPIPE, SIG_IGN);
 	
-	bool foundConfig = false;
+	bool foundConfig = false, userConfig = false;
 	
 	// store for later
 	_argc = argc;
@@ -75,8 +73,13 @@ int main(int argc, char* argv[])
 	/* parse configuration */
 	Configuration appConfig;
 	if (argc == 1) {
-		/* look for config file in user or system directory */
-		foundConfig = CheckConfig(path, sizeof path);
+		/* look for config file in user or system directory */		
+		if (CheckUserConfig(path, sizeof path)) {
+			foundConfig = true;
+			userConfig = true;
+		} else if (CheckSystemConfig(path, sizeof path)) {
+			foundConfig = true;
+		}
 	} else if (argc == 2) {
 		/* interpret the argument as the path to a particular config file */
 		snprintf(path, sizeof path, "%s", argv[1]);
@@ -144,7 +147,7 @@ int main(int argc, char* argv[])
 
 #ifdef TOOLBAR_ICON
 	pthread_t toolbarpid;
-	if (pthread_create(&toolbarpid, 0x0, GTKStartup, (void*)0x0) == -1)
+	if (pthread_create(&toolbarpid, 0x0, GTKStartup, (void*)&userConfig) == -1)
 	{
 		syslog(LOG_WARNING, "pthread_create failed: %s", strerror(errno));
 	}
@@ -193,38 +196,22 @@ int main(int argc, char* argv[])
 }
 
 /*
+ * consider just don't show preferences edit option if userconfig not found,
+ * rather than allowing the edit prefs option to open some other such file.
+ *
  * Parameters:
  *   p, return path
  *   psize, length of return path string
  * 
  * Return Value:
- *   true if a config file is found
- *   false if a config file is not found
+ *   true if a user config file is found
+ *   false if a user config file is not found
  * 
  * Result:
- *   p is set to path to config file if found
- *   p is not modified if no config file is found
+ *   p is set to path to user config file if found
+ *   p is not modified if no user config file is found
  */
-bool CheckConfig(char *p, size_t psize) {
-	
-	if (CheckUserConfig(p, psize)) {
-		return true;
-	}
-	
-	if (CheckSystemConfig(p, psize)) {
-		return true;
-	}
-	
-	return false;
-}
-
-/*
- * consider just don't show preferences edit option if userconfig not found,
- * rather than allowing the edit prefs option to open some other such file.
- *
- * Behaves as CheckConfig, specific to config file in user dir
- */
-bool CheckUserConfig(char *fpath, size_t fpathlen) {
+bool CheckUserConfig(char *p, size_t psize) {
 	
 	char upath[PATH_MAX];
 	
@@ -238,14 +225,24 @@ bool CheckUserConfig(char *fpath, size_t fpathlen) {
 		return false;
 	}
 	
-	strncpy(fpath, upath, fpathlen);
+	strncpy(p, upath, psize);
 	return true;
 }
 
 /*
- * Behaves as CheckConfig, specific to config file is system dir
+ * Parameters:
+ *   p, return path
+ *   psize, length of return path string
+ * 
+ * Return Value:
+ *   true if a system config file is found
+ *   false if a system config file is not found
+ * 
+ * Result:
+ *   p is set to path to system config file if found
+ *   p is not modified if no system config file is found
  */
-bool CheckSystemConfig(char *fpath, size_t fpathlen) {
+bool CheckSystemConfig(char *p, size_t psize) {
 	
 	char cpath[PATH_MAX];
 	
@@ -254,7 +251,7 @@ bool CheckSystemConfig(char *fpath, size_t fpathlen) {
 		return false;
 	}
 	
-	strncpy(fpath, cpath, fpathlen);
+	strncpy(p, cpath, psize);
 	return true; 
 }
 
@@ -301,7 +298,6 @@ void GTKPreferences(GtkMenuItem* item __attribute__((unused)), gpointer uptr __a
 		if (strlen(path) > 0) {
 			snprintf(cmd, sizeof cmd, "gnome-text-editor %s &", path);
 		}
-		// to-do: just don't create this menu option if no path (foundConfig false)
 	}
 	system(cmd);
 }
@@ -317,19 +313,27 @@ void GTKTrayMenu(GtkStatusIcon* tray, guint button, guint32 time, gpointer uptr)
 	gtk_menu_popup(GTK_MENU(uptr), NULL, NULL, gtk_status_icon_position_menu, tray, button, time);
 }
 
-void* GTKStartup(void *)
+void* GTKStartup(void *arg)
 {
 	gtk_init(0, 0x0);
+	bool editablePreferences = *((bool *)arg); 
+	
 	tray = gtk_status_icon_new();
 	
 	GtkWidget *menu = gtk_menu_new(),
 		  *menuPreferences = gtk_menu_item_new_with_label("Preferences"),
 		  *menuAbout = gtk_menu_item_new_with_label("About"),
 		  *menuQuit = gtk_menu_item_new_with_label("Quit");
-	g_signal_connect(G_OBJECT(menuPreferences), "activate", G_CALLBACK(GTKPreferences), NULL);
+	
+	if (editablePreferences) {
+		g_signal_connect(G_OBJECT(menuPreferences), "activate", G_CALLBACK(GTKPreferences), NULL);
+	}
 	g_signal_connect(G_OBJECT(menuAbout), "activate", G_CALLBACK(GTKTrayAbout), NULL);
 	g_signal_connect(G_OBJECT(menuQuit), "activate", G_CALLBACK(GTKTrayQuit), NULL);
-	gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuPreferences);
+	
+	if (editablePreferences) {
+		gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuPreferences);
+	}
 	gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuAbout);
 	gtk_menu_shell_append(GTK_MENU_SHELL(menu), gtk_separator_menu_item_new());
 	gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuQuit);
