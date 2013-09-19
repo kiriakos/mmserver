@@ -27,7 +27,7 @@
 #include <sys/stat.h>
 #include <linux/limits.h>
 
-#define TOOLBAR_ICON
+//#define TOOLBAR_ICON
 #ifdef TOOLBAR_ICON
 #include <gtk/gtk.h>
 #include <sys/wait.h>
@@ -60,7 +60,10 @@ int main(int argc, char* argv[])
 {
 	signal(SIGPIPE, SIG_IGN);
 	char path[PATH_MAX];
-	bool foundConfig = false, userConfig = false;
+	bool foundConfig = false;
+#ifdef TOOLBAR_ICON	
+	bool userConfig = false;
+#endif
 	
 	// store for later
 	_argc = argc;
@@ -76,7 +79,9 @@ int main(int argc, char* argv[])
 		/* look for config file in user or system directory */		
 		if (CheckUserConfig(path, sizeof path)) {
 			foundConfig = true;
+#ifdef TOOLBAR_ICON
 			userConfig = true;
+#endif
 		} else if (CheckSystemConfig(path, sizeof path)) {
 			foundConfig = true;
 		}
@@ -195,9 +200,6 @@ int main(int argc, char* argv[])
 }
 
 /*
- * consider just don't show preferences edit option if userconfig not found,
- * rather than allowing the edit prefs option to open some other such file.
- *
  * Parameters:
  *   p, return path
  *   psize, length of return path string
