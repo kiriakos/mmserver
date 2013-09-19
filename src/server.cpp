@@ -34,6 +34,7 @@
 #define TOOLBAR_LABEL_DEFAULT "Mobile Mouse Linux Server"
 #define TOOLBAR_ICON_DEFAULT "/usr/share/mmserver/icons/mm-idle.svg"
 #define TOOLBAR_ICON_CONNECTED "/usr/share/mmserver/icons/mm-connected.svg"
+#define PREFERENCES_EDITOR "gnome-open"
 #endif
 #define DEFAULT_CONFIG "/usr/share/mmserver/mmserver.conf"
 #define USER_CONFIG_DIR ".mmserver"
@@ -296,7 +297,7 @@ void GTKTrayAbout(GtkMenuItem* item __attribute__((unused)), gpointer uptr __att
 void GTKPreferences(GtkMenuItem* item __attribute__((unused)), gpointer uptr) 
 {
 	char cmd[PATH_MAX];
-	snprintf(cmd, sizeof cmd, "gnome-text-editor %s &", (char *)uptr);
+	snprintf(cmd, sizeof cmd, "%s %s &", PREFERENCES_EDITOR, (char *)uptr);
 	system(cmd);
 }
 
