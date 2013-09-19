@@ -49,7 +49,6 @@
 void* GTKStartup(void *arg);
 GtkStatusIcon* tray = NULL;
 #endif
-char path[PATH_MAX];
 int _argc;
 char** _argv;
 
@@ -60,7 +59,7 @@ bool FileExists(const char *filePath);
 int main(int argc, char* argv[])
 {
 	signal(SIGPIPE, SIG_IGN);
-	
+	char path[PATH_MAX];
 	bool foundConfig = false, userConfig = false;
 	
 	// store for later
@@ -147,7 +146,7 @@ int main(int argc, char* argv[])
 
 #ifdef TOOLBAR_ICON
 	pthread_t toolbarpid;
-	if (pthread_create(&toolbarpid, 0x0, GTKStartup, (void*)&userConfig) == -1)
+	if (pthread_create(&toolbarpid, 0x0, GTKStartup, (void*)(userConfig ? path : NULL)) == -1)
 	{
 		syslog(LOG_WARNING, "pthread_create failed: %s", strerror(errno));
 	}
@@ -292,10 +291,10 @@ void GTKTrayAbout(GtkMenuItem* item __attribute__((unused)), gpointer uptr __att
 	gtk_widget_destroy(about);
 }
 
-void GTKPreferences(GtkMenuItem* item __attribute__((unused)), gpointer uptr __attribute__((unused))) 
+void GTKPreferences(GtkMenuItem* item __attribute__((unused)), gpointer uptr) 
 {
 	char cmd[PATH_MAX];
-	snprintf(cmd, sizeof cmd, "gnome-text-editor %s &", path);
+	snprintf(cmd, sizeof cmd, "gnome-text-editor %s &", (char *)uptr);
 	system(cmd);
 }
 
@@ -313,8 +312,8 @@ void GTKTrayMenu(GtkStatusIcon* tray, guint button, guint32 time, gpointer uptr)
 void* GTKStartup(void *arg)
 {
 	gtk_init(0, 0x0);
-	bool editablePreferences = *((bool *)arg); 
-	
+	char *preferencesPath = (char *)arg;
+		
 	tray = gtk_status_icon_new();
 	
 	GtkWidget *menu = gtk_menu_new(),
@@ -322,13 +321,13 @@ void* GTKStartup(void *arg)
 		  *menuAbout = gtk_menu_item_new_with_label("About"),
 		  *menuQuit = gtk_menu_item_new_with_label("Quit");
 	
-	if (editablePreferences) {
-		g_signal_connect(G_OBJECT(menuPreferences), "activate", G_CALLBACK(GTKPreferences), NULL);
+	if (preferencesPath != NULL) {
+		g_signal_connect(G_OBJECT(menuPreferences), "activate", G_CALLBACK(GTKPreferences), (gpointer)preferencesPath);
 	}
 	g_signal_connect(G_OBJECT(menuAbout), "activate", G_CALLBACK(GTKTrayAbout), NULL);
 	g_signal_connect(G_OBJECT(menuQuit), "activate", G_CALLBACK(GTKTrayQuit), NULL);
 	
-	if (editablePreferences) {
+	if (preferencesPath != NULL) {
 		gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuPreferences);
 	}
 	gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuAbout);
