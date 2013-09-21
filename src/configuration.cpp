@@ -32,6 +32,7 @@ Configuration::Configuration()
 , m_mouseAccelerationFactor(4)
 , m_mouseHorizontalScrolling(false)
 , m_mouseScrollMax(1)
+, m_keyboardEnabled(true)
 , m_keyboardLayout("iso-8859-1")
 {
 	char hostname[256];
@@ -117,6 +118,11 @@ void Configuration::Read(const std::string& file)
 		}
 	}
 
+	if (config.exists("keyboard.enabled")) 
+	{
+		m_keyboardEnabled = (bool)config.lookup("keyboard.enabled");
+	}
+	
 	if (config.exists("keyboard.layout"))
 	{
 		m_keyboardLayout = (const char*)config.lookup("keyboard.layout");
@@ -237,6 +243,11 @@ bool Configuration::getMouseHorizontalScrolling() const
 int Configuration::getMouseScrollMax() const
 {
 	return m_mouseScrollMax;
+}
+
+bool Configuration::getKeyboardEnabled() const
+{
+	return m_keyboardEnabled;
 }
 
 const std::string& Configuration::getKeyboardLayout() const
