@@ -109,6 +109,10 @@ int main(int argc, char* argv[])
 		}
 	}
 
+	if (!appConfig.getKeyboardEnabled()) {
+		syslog(LOG_INFO, "keyboard input ignored");
+	}
+
 	syslog(LOG_INFO, "started on port %d", appConfig.getPort());
 	daemon(1, 1);
 

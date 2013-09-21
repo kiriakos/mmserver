@@ -45,10 +45,7 @@ void* MobileMouseSession(void* context)
 	delete static_cast<SessionContext*>(context);
 
 	XMouseInterface mousePointer;
-	// if config says to disregard keyboard input, set up the interface to not send anything
-	// note that this means keyboard related blocks here will still do (unneeded) work to process packets - only their sendkeys will be ignored
-	// keyboardenabled still has to be set up in config code
-	XKeyboardInterface keyBoard("", appConfig.getKeyboardEnabled());
+	XKeyboardInterface keyBoard(appConfig.getKeyboardEnabled());
 
 	syslog(LOG_INFO, "[%s] connected", address.c_str());
 

@@ -90,7 +90,7 @@ void XMouseInterface::MouseMove(int x, int y)
 	XFlush(m_display);
 }
 
-XKeyboardInterface::XKeyboardInterface(const std::string display, bool enabled)
+XKeyboardInterface::XKeyboardInterface(bool enabled, const std::string display)
 {
 	keyboardEnabled = enabled;
 	
