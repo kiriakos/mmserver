@@ -34,7 +34,7 @@
 #define TOOLBAR_LABEL_DEFAULT "Mobile Mouse Linux Server"
 #define TOOLBAR_ICON_DEFAULT "/usr/share/mmserver/icons/mm-idle.svg"
 #define TOOLBAR_ICON_CONNECTED "/usr/share/mmserver/icons/mm-connected.svg"
-#define PREFERENCES_EDITOR "gnome-open"
+#define PREFERENCES_EDITOR "xdg-open"
 #endif
 #define DEFAULT_CONFIG "/usr/share/mmserver/mmserver.conf"
 #define USER_CONFIG_DIR ".mmserver"
