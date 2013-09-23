@@ -44,6 +44,7 @@ class Configuration
 		int getMouseAccelerationFactor() const;
 		bool getMouseHorizontalScrolling() const;
 		int getMouseScrollMax() const;
+		bool getKeyboardEnabled() const;
 		const std::string& getKeyboardLayout() const;
 
 		const std::string getHotKeyName(unsigned int id) const;
@@ -62,6 +63,7 @@ class Configuration
 		int m_mouseAccelerationFactor;
 		bool m_mouseHorizontalScrolling;
 		int m_mouseScrollMax;
+		bool m_keyboardEnabled;
 		std::string m_keyboardLayout;
 
 		std::map<unsigned int, std::pair<std::string, std::string> > m_hotkeys;

@@ -45,7 +45,7 @@ void* MobileMouseSession(void* context)
 	delete static_cast<SessionContext*>(context);
 
 	XMouseInterface mousePointer;
-	XKeyboardInterface keyBoard;
+	XKeyboardInterface keyBoard(appConfig.getKeyboardEnabled());
 
 	syslog(LOG_INFO, "[%s] connected", address.c_str());
 

@@ -90,8 +90,10 @@ void XMouseInterface::MouseMove(int x, int y)
 	XFlush(m_display);
 }
 
-XKeyboardInterface::XKeyboardInterface(const std::string display)
+XKeyboardInterface::XKeyboardInterface(bool enabled, const std::string display)
 {
+	keyboardEnabled = enabled;
+	
 	if ((m_display = XOpenDisplay(display.empty()?NULL:display.c_str())) == NULL)
 	{
 		// sorry for throwing in constructor...
@@ -129,6 +131,10 @@ bool XKeyboardInterface::keysymIsShiftVariant(KeySym key)
 
 void XKeyboardInterface::SendKey(const std::list<int>& keycode)
 {
+	if (!keyboardEnabled) {
+		return;
+	}
+	
 	for(std::list<int>::const_iterator i = keycode.begin();
 			i != keycode.end(); i++)
 	{

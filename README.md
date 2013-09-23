@@ -37,6 +37,12 @@ sudo make install
 
 Invoke by running `mmserver` or by choosing *Mobile Mouse Server for Linux* from your system menu.
 
+## Security
+
+The Mobile Mouse protocol is unencrypted. Among other things, this means your key presses are transmitted in plain text, so an eavesdropper connected to your network could easily monitor your input (including passwords) without otherwise compromising your computer or mobile device. I therefore recommend not using Mobile Mouse on public networks. If you must, at least refrain from entering sensitive text.
+
+Additionally, I recommend using the `device.id` and `device.password` configuration settings to restrict Mobile Mouse connections to approved devices.
+
 ## Compatibility
 
 Tested with version 2.7.1 of Mobile Mouse Pro for iOS. Other versions may or may not be compatible.
