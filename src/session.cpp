@@ -76,7 +76,12 @@ void* MobileMouseSession(void* context)
 		close(client);
 		return NULL;
 	}
-
+	
+	if (appConfig.getDebug()) {
+		syslog(LOG_INFO, "[%s] device id: %s", address.c_str(), id.c_str());
+		syslog(LOG_INFO, "[%s] device name: %s", address.c_str(), name.c_str());
+	}
+	
 	/* verify device.id */
 	if (!appConfig.getDevices().empty() &&
 			appConfig.getDevices().find(id) == appConfig.getDevices().end())
