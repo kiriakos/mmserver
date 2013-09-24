@@ -107,6 +107,8 @@ int main(int argc, char* argv[])
 			syslog(LOG_ERR, "Cannot read configuration from: %s", path);
 			exit(1);
 		}
+	} else {
+		syslog(LOG_INFO, "no configuration file found; using internal defaults");
 	}
 
 	if (!appConfig.getKeyboardEnabled()) {
