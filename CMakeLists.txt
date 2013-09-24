@@ -77,25 +77,12 @@ INSTALL(PROGRAMS "${CMAKE_SOURCE_DIR}/share/mmserver.desktop"
 	DESTINATION "/usr/share/gnome/autostart"
 	PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
 
-# Installation of Gnome Menu Icon
+# Installation of Gnome menu item
 INSTALL(PROGRAMS "${CMAKE_SOURCE_DIR}/share/mmserver.desktop"
 	DESTINATION "/usr/share/applications"
 	PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
 
-# Installation of icons
-INSTALL(PROGRAMS "${CMAKE_SOURCE_DIR}/share/mm-idle.svg"
+# Installation of icon (used for menu item)
+INSTALL(PROGRAMS "${CMAKE_SOURCE_DIR}/icons/mm-idle.svg"
 	DESTINATION "/usr/share/mmserver/icons"
 	PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
-
-INSTALL(PROGRAMS "${CMAKE_SOURCE_DIR}/share/mm-connected.svg"
-	DESTINATION "/usr/share/mmserver/icons"
-	PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
-
-INSTALL(PROGRAMS "${CMAKE_SOURCE_DIR}/share/mm-idle.png"
-	DESTINATION "/usr/share/mmserver/icons"
-	PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
-
-INSTALL(PROGRAMS "${CMAKE_SOURCE_DIR}/share/mm-connected.png"
-	DESTINATION "/usr/share/mmserver/icons"
-	PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
-

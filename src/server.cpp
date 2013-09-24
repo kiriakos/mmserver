@@ -31,11 +31,15 @@
 #ifdef TOOLBAR_ICON
 #include <gtk/gtk.h>
 #include <sys/wait.h>
+#include "icons.h"
 #define TOOLBAR_LABEL_DEFAULT "Mobile Mouse Linux Server"
-#define TOOLBAR_ICON_DEFAULT "/usr/share/mmserver/icons/mm-idle.png"
-#define TOOLBAR_ICON_CONNECTED "/usr/share/mmserver/icons/mm-connected.png"
 #define PREFERENCES_EDITOR "xdg-open"
+
+void* GTKStartup(void *arg);
+GtkStatusIcon* tray = NULL;
+GdkPixbuf *idle_icon, *connected_icon;
 #endif
+
 #define DEFAULT_CONFIG "/usr/share/mmserver/mmserver.conf"
 #define USER_CONFIG_DIR ".mmserver"
 
@@ -46,10 +50,6 @@
 
 #include "version.hpp.in"
 
-#ifdef TOOLBAR_ICON
-void* GTKStartup(void *arg);
-GtkStatusIcon* tray = NULL;
-#endif
 int _argc;
 char** _argv;
 
@@ -183,7 +183,7 @@ int main(int argc, char* argv[])
 
 #ifdef TOOLBAR_ICON
 		gtk_status_icon_set_tooltip(tray, std::string(clientContext->m_address + " connected").c_str());
-		gtk_status_icon_set_from_file(tray, TOOLBAR_ICON_CONNECTED);
+		gtk_status_icon_set_from_pixbuf(tray, connected_icon);
 #endif
 
 		pthread_t pid;
@@ -197,7 +197,7 @@ int main(int argc, char* argv[])
 
 #ifdef TOOLBAR_ICON
 		gtk_status_icon_set_tooltip(tray, TOOLBAR_LABEL_DEFAULT);
-		gtk_status_icon_set_from_file(tray, TOOLBAR_ICON_DEFAULT);
+		gtk_status_icon_set_from_pixbuf(tray, idle_icon);
 #endif
 	}
 
@@ -320,7 +320,10 @@ void* GTKStartup(void *arg)
 {
 	gtk_init(0, 0x0);
 	char *preferencesPath = (char *)arg;
-		
+	
+	idle_icon = gdk_pixbuf_new_from_inline(-1, mm_idle, false, NULL);
+	connected_icon = gdk_pixbuf_new_from_inline(-1, mm_connected, false, NULL);
+	
 	tray = gtk_status_icon_new();
 	
 	GtkWidget *menu = gtk_menu_new(),
@@ -344,8 +347,7 @@ void* GTKStartup(void *arg)
 
 	g_signal_connect(G_OBJECT(tray), "popup-menu", G_CALLBACK(GTKTrayMenu), menu);
 	gtk_status_icon_set_tooltip(tray, TOOLBAR_LABEL_DEFAULT);
-	gtk_status_icon_set_from_icon_name(tray, TOOLBAR_ICON_DEFAULT);
-	gtk_status_icon_set_from_file(tray, TOOLBAR_ICON_DEFAULT);
+	gtk_status_icon_set_from_pixbuf(tray, idle_icon);
 	gtk_status_icon_set_visible(tray, TRUE);
 
 	gtk_main();
