@@ -8,9 +8,12 @@ Use your iOS or Android device as a network mouse and keyboard for your Linux co
 - Added support for horizontal scrolling.
 - Added user-configurable scrolling speed limit.
 - Added support for middle mouse button.
+- Added support for gesture commands.
 - Fixed numeric keypad input of numerals.
 - Fixed keyboard input of capital letters and some other characters (hack).
-- Other minor changes and simplifications.
+- Added options to disable keyboard input and zeroconf networking.
+- Changed config file loading to simplify startup and first run.
+- Other minor changes.
 
 ## Installation
 
