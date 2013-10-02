@@ -307,6 +307,31 @@ void GTKPreferences(GtkMenuItem* item __attribute__((unused)), gpointer uptr)
 	system(cmd);
 }
 
+void GTKTrayRestart(GtkMenuItem* item __attribute__((unused)), gpointer uptr __attribute__((unused)))
+{
+	// cribbed from the auto-restart originally performed after pref editing
+	
+	pid_t pid = fork();
+	
+	if (pid == 0)
+	{
+		for(int i = 3; i < getdtablesize(); i++)
+			close(i);
+		
+		kill(getppid(), SIGKILL);
+
+		if (_argc == 2)
+			execl(_argv[0], _argv[0], _argv[1], NULL);
+		else
+			execl(_argv[0], _argv[0], NULL);
+		
+		exit(1);
+	}
+
+	int ret;
+	waitpid(pid, &ret, 0); 
+}
+
 void GTKTrayQuit(GtkMenuItem* item __attribute__((unused)), gpointer uptr __attribute__((unused))) 
 {
 	syslog(LOG_INFO, "quitting from tray menu");
@@ -331,12 +356,14 @@ void* GTKStartup(void *arg)
 	GtkWidget *menu = gtk_menu_new(),
 		  *menuPreferences = gtk_menu_item_new_with_label("Preferences"),
 		  *menuAbout = gtk_menu_item_new_with_label("About"),
+		  *menuRestart = gtk_menu_item_new_with_label("Restart"),
 		  *menuQuit = gtk_menu_item_new_with_label("Quit");
 	
 	if (preferencesPath != NULL) {
 		g_signal_connect(G_OBJECT(menuPreferences), "activate", G_CALLBACK(GTKPreferences), (gpointer)preferencesPath);
 	}
 	g_signal_connect(G_OBJECT(menuAbout), "activate", G_CALLBACK(GTKTrayAbout), NULL);
+	g_signal_connect(G_OBJECT(menuRestart), "activate", G_CALLBACK(GTKTrayRestart), NULL);
 	g_signal_connect(G_OBJECT(menuQuit), "activate", G_CALLBACK(GTKTrayQuit), NULL);
 	
 	if (preferencesPath != NULL) {
@@ -344,6 +371,7 @@ void* GTKStartup(void *arg)
 	}
 	gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuAbout);
 	gtk_menu_shell_append(GTK_MENU_SHELL(menu), gtk_separator_menu_item_new());
+	gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuRestart);
 	gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuQuit);
 	gtk_widget_show_all(menu);
 
