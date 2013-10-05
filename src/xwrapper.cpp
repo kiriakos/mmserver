@@ -24,6 +24,12 @@
 #include <stdexcept>
 #include <stdlib.h>
 
+#include <stdio.h>
+#include <X11/Xatom.h>
+#include <X11/Xmu/Atoms.h>
+
+#include "xclib.h"
+
 XMouseInterface::XMouseInterface(const std::string display)
 {
 	if ((m_display = XOpenDisplay(display.empty()?NULL:display.c_str())) == NULL)
@@ -152,4 +158,56 @@ void XKeyboardInterface::SendKey(const std::list<int>& keycode)
 		XTestFakeKeyEvent(m_display, key, False, CurrentTime);
 	}
 	XFlush(m_display);
+}
+
+// jacked from xclip
+// interested only in CLIPBOARD clipboard (not PRIMARY or SECONDARY)
+// maybe require libXmuu (lightweight version of libXmu) for XA_CLIPBOARD(display)?
+void DumpClipboard(void) {
+	
+    unsigned char *sel_buf;     /* buffer for selection data */
+    unsigned long sel_len = 0;  /* length of sel_buf */
+    XEvent evt;                 /* X Event Structures */
+    unsigned int context = XCLIB_XCOUT_NONE;
+
+	Display *d = XOpenDisplay(NULL);
+	Atom sseln = XA_CLIPBOARD(d);	/* X selection to work with */
+	Atom target = XA_STRING;
+	Window win = XCreateSimpleWindow(d, DefaultRootWindow(d), 0, 0, 1, 1, 0, 0, 0);
+
+	while (1) {
+		/* only get an event if xcout() is doing something */
+		if (context != XCLIB_XCOUT_NONE) {
+			XNextEvent(d, &evt);
+		}
+		
+		/* fetch the selection, or part of it */
+		xcout(d, win, evt, sseln, target, &sel_buf, &sel_len, &context);
+		
+		/* fallback is needed. set XA_STRING to target and restart the loop. */
+		if (context == XCLIB_XCOUT_FALLBACK) {
+			context = XCLIB_XCOUT_NONE;
+			target = XA_STRING;
+			continue;
+		}
+		
+		/* only continue if xcout() is doing something */
+		if (context == XCLIB_XCOUT_NONE) {
+			break;
+		}
+	}
+
+    if (sel_len) {
+		/* only print the buffer out, and free it, if it's not
+		 * empty
+		 */
+		fwrite(sel_buf, sizeof(char), sel_len, stdout);
+		if (sseln == XA_STRING)
+			XFree(sel_buf);
+		else
+			free(sel_buf);
+    } 
+    
+    XDestroyWindow(d, win);
+    XCloseDisplay(d);
 }

@@ -28,6 +28,7 @@ ADD_EXECUTABLE(${TARGET_NAME} ${SOURCE_FILES})
 TARGET_LINK_LIBRARIES(${TARGET_NAME}
 	X11
 	Xtst
+	Xmu
 	pcrecpp
 	config++
 	pthread
