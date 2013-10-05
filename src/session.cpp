@@ -205,7 +205,7 @@ void* MobileMouseSession(void* context)
 		{
 			if (option == "CLIPBOARDSYNC") {
 				syslog(LOG_INFO, "Clipboard sync: %s", optval.c_str());
-				if (optval == "1") {
+				/*if (optval == "1") {
 					
 					char m[1024];
 					snprintf(m, sizeof(m), "CLIPBOARDUPDATE\x1e" "TEXT\x1f" "Hello, world!\x04");
@@ -215,7 +215,7 @@ void* MobileMouseSession(void* context)
 						close(client);
 						break;
 					}
-				}
+				}*/
 			}
 			else if (option == "PRESENTATION") {
 				/* Presumably concerns the extra in-app purchase "pro presentation module" */
