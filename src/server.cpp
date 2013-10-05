@@ -25,16 +25,23 @@
 #include <memory.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <linux/limits.h>
 
 #define TOOLBAR_ICON
 #ifdef TOOLBAR_ICON
 #include <gtk/gtk.h>
 #include <sys/wait.h>
+#include "icons.h"
 #define TOOLBAR_LABEL_DEFAULT "Mobile Mouse Linux Server"
-#define TOOLBAR_ICON_DEFAULT "/usr/share/mmserver/icons/mm-idle.svg"
-#define TOOLBAR_ICON_CONNECTED "/usr/share/mmserver/icons/mm-connected.svg"
+#define PREFERENCES_EDITOR "xdg-open"
+
+void* GTKStartup(void *arg);
+GtkStatusIcon* tray = NULL;
+GdkPixbuf *idle_icon, *connected_icon;
 #endif
+
 #define DEFAULT_CONFIG "/usr/share/mmserver/mmserver.conf"
+#define USER_CONFIG_DIR ".mmserver"
 
 #include <libconfig.h++>
 #include "configuration.hpp"
@@ -43,17 +50,21 @@
 
 #include "version.hpp.in"
 
-#ifdef TOOLBAR_ICON
-void* GTKStartup(void *);
-GtkStatusIcon* tray = NULL;
-#endif
-char path[PATH_MAX];
 int _argc;
 char** _argv;
+
+bool CheckUserConfig(char *fpath, size_t fpathlen);
+bool CheckSystemConfig(char *fpath, size_t fpathlen);
+bool FileExists(const char *filePath);
 
 int main(int argc, char* argv[])
 {
 	signal(SIGPIPE, SIG_IGN);
+	char path[PATH_MAX];
+	bool foundConfig = false;
+#ifdef TOOLBAR_ICON	
+	bool userConfig = false;
+#endif
 	
 	// store for later
 	_argc = argc;
@@ -66,36 +77,42 @@ int main(int argc, char* argv[])
 	/* parse configuration */
 	Configuration appConfig;
 	if (argc == 1) {
-		if (getenv("HOME")) {
-			snprintf(path, sizeof path, "%s/.mmserver/mmserver.conf", getenv("HOME"));
-			struct stat st;
-			if (stat(path, &st) != 0 || !(st.st_mode & S_IFREG))
-				snprintf(path, sizeof path, DEFAULT_CONFIG);
-		} else {
-			snprintf(path, sizeof path, DEFAULT_CONFIG);
+		/* look for config file in user or system directory */		
+		if (CheckUserConfig(path, sizeof path)) {
+			foundConfig = true;
+#ifdef TOOLBAR_ICON
+			userConfig = true;
+#endif
+		} else if (CheckSystemConfig(path, sizeof path)) {
+			foundConfig = true;
 		}
+	} else if (argc == 2) {
+		/* interpret the argument as the path to a particular config file */
+		snprintf(path, sizeof path, "%s", argv[1]);
+		foundConfig = true;
+	} else {
+		fprintf(stderr, "Mobile Mouse Server for Linux (%s.%s.%s)\n",
+				MMSERVER_VERSION_MAJOR, MMSERVER_VERSION_MINOR, MMSERVER_VERSION_PATCH);
+		fprintf(stderr, "Website: https://github.com/anoved/mmserver/\n");
+		fprintf(stderr, "Usage: %s [/path/to/mmserver.conf]\n", argv[0]);
+		return 1;
+	}
+
+	if (foundConfig) {
 		syslog(LOG_INFO, "reading configuration from %s", path);
-		/* ParseExceptions should be allowed to terminate the program, so that
-		 * the user is prompted to fix the problem. FileIOExceptions indicate
-		 * that the config file is not found, so just use the default values. */
 		try {
 			appConfig.Read(path);
-		} catch (const libconfig::FileIOException &err) {
-			syslog(LOG_ERR, "Cannot find config file; using default values");
 		}
-	} else if (argc > 2 && strcmp(argv[1], "-f") == 0) {
-		syslog(LOG_INFO, "reading configuration from %s", argv[2]);
-		/* We do *not* catch file-not-found exceptions for explicitly named
-		 * config files; the user wanted one specifically, so don't default. */
-		appConfig.Read(argv[2]);
+		catch (const libconfig::FileIOException &err) {
+			syslog(LOG_ERR, "Cannot read configuration from: %s", path);
+			exit(1);
+		}
 	} else {
-		fprintf(stderr, "Mobile Mouse Server for Linux (%s.%s.%s) by Erik Lax <erik@datahack.se>\n",
-			MMSERVER_VERSION_MAJOR,
-			MMSERVER_VERSION_MINOR,
-			MMSERVER_VERSION_PATCH	
-		);
-		fprintf(stderr, "Run: %s /path/to/mmserver.conf\n", argv[0]);
-		return 1;
+		syslog(LOG_INFO, "no configuration file found; using internal defaults");
+	}
+
+	if (!appConfig.getKeyboardEnabled()) {
+		syslog(LOG_INFO, "keyboard input ignored");
 	}
 
 	syslog(LOG_INFO, "started on port %d", appConfig.getPort());
@@ -141,7 +158,7 @@ int main(int argc, char* argv[])
 
 #ifdef TOOLBAR_ICON
 	pthread_t toolbarpid;
-	if (pthread_create(&toolbarpid, 0x0, GTKStartup, (void*)0x0) == -1)
+	if (pthread_create(&toolbarpid, 0x0, GTKStartup, (void*)(userConfig ? path : NULL)) == -1)
 	{
 		syslog(LOG_WARNING, "pthread_create failed: %s", strerror(errno));
 	}
@@ -168,7 +185,7 @@ int main(int argc, char* argv[])
 
 #ifdef TOOLBAR_ICON
 		gtk_status_icon_set_tooltip(tray, std::string(clientContext->m_address + " connected").c_str());
-		gtk_status_icon_set_from_file(tray, TOOLBAR_ICON_CONNECTED);
+		gtk_status_icon_set_from_pixbuf(tray, connected_icon);
 #endif
 
 		pthread_t pid;
@@ -182,11 +199,85 @@ int main(int argc, char* argv[])
 
 #ifdef TOOLBAR_ICON
 		gtk_status_icon_set_tooltip(tray, TOOLBAR_LABEL_DEFAULT);
-		gtk_status_icon_set_from_file(tray, TOOLBAR_ICON_DEFAULT);
+		gtk_status_icon_set_from_pixbuf(tray, idle_icon);
 #endif
 	}
 
 	return 0;
+}
+
+/*
+ * Parameters:
+ *   p, return path
+ *   psize, length of return path string
+ * 
+ * Return Value:
+ *   true if a user config file is found
+ *   false if a user config file is not found
+ * 
+ * Result:
+ *   p is set to path to user config file if found
+ *   (user config file may be created as a copy of system config file)
+ *   p is not modified if no user config file is found
+ */
+bool CheckUserConfig(char *p, size_t psize) {
+	
+	char upath[PATH_MAX];
+	
+	if (!getenv("HOME")) {
+		return false;
+	}
+	
+	snprintf(upath, sizeof upath, "%s/%s/mmserver.conf", getenv("HOME"), USER_CONFIG_DIR);
+	if (!FileExists(upath)) {
+		// attempt to install system conf file in user dir before failing
+		if (	system("mkdir -p ~/" USER_CONFIG_DIR "/ >/dev/null 2>&1 ") ||
+				system("cp " DEFAULT_CONFIG " ~/" USER_CONFIG_DIR "/ >/dev/null 2>&1")) {
+			return false;
+		}
+		syslog(LOG_INFO, "creating %s", upath);
+	}
+	
+	strncpy(p, upath, psize);
+	return true;
+}
+
+/*
+ * Parameters:
+ *   p, return path
+ *   psize, length of return path string
+ * 
+ * Return Value:
+ *   true if a system config file is found
+ *   false if a system config file is not found
+ * 
+ * Result:
+ *   p is set to path to system config file if found
+ *   p is not modified if no system config file is found
+ */
+bool CheckSystemConfig(char *p, size_t psize) {
+	
+	char cpath[PATH_MAX];
+	
+	snprintf(cpath, sizeof cpath, DEFAULT_CONFIG);
+	if (!FileExists(cpath)) {
+		return false;
+	}
+	
+	strncpy(p, cpath, psize);
+	return true; 
+}
+
+/* Return Value:
+ *   true if file at filePath exists and is a regular file
+ *   false otherwise
+ */
+bool FileExists(const char *filePath) {
+	struct stat st;
+	if (stat(filePath, &st) != 0 || !(st.st_mode & S_IFREG)) {
+		return false;
+	}
+	return true;
 }
 
 #ifdef TOOLBAR_ICON
@@ -209,17 +300,36 @@ void GTKTrayAbout(GtkMenuItem* item __attribute__((unused)), gpointer uptr __att
 	gtk_widget_destroy(about);
 }
 
-void GTKPreferences(GtkMenuItem* item __attribute__((unused)), gpointer uptr __attribute__((unused))) 
+void GTKPreferences(GtkMenuItem* item __attribute__((unused)), gpointer uptr) 
 {
 	char cmd[PATH_MAX];
-	if (strcmp(path, DEFAULT_CONFIG) == 0) {
-		system("mkdir -p ~/.mmserver/");
-		system("cp /usr/share/mmserver/mmserver.conf ~/.mmserver/");
-		snprintf(cmd, sizeof cmd, "gnome-text-editor ~/.mmserver/mmserver.conf &");
-	} else {
-		snprintf(cmd, sizeof cmd, "gnome-text-editor %s &", path);
-	}
+	snprintf(cmd, sizeof cmd, "%s %s &", PREFERENCES_EDITOR, (char *)uptr);
 	system(cmd);
+}
+
+void GTKTrayRestart(GtkMenuItem* item __attribute__((unused)), gpointer uptr __attribute__((unused)))
+{
+	// cribbed from the auto-restart originally performed after pref editing
+	
+	pid_t pid = fork();
+	
+	if (pid == 0)
+	{
+		for(int i = 3; i < getdtablesize(); i++)
+			close(i);
+		
+		kill(getppid(), SIGKILL);
+
+		if (_argc == 2)
+			execl(_argv[0], _argv[0], _argv[1], NULL);
+		else
+			execl(_argv[0], _argv[0], NULL);
+		
+		exit(1);
+	}
+
+	int ret;
+	waitpid(pid, &ret, 0); 
 }
 
 void GTKTrayQuit(GtkMenuItem* item __attribute__((unused)), gpointer uptr __attribute__((unused))) 
@@ -233,28 +343,41 @@ void GTKTrayMenu(GtkStatusIcon* tray, guint button, guint32 time, gpointer uptr)
 	gtk_menu_popup(GTK_MENU(uptr), NULL, NULL, gtk_status_icon_position_menu, tray, button, time);
 }
 
-void* GTKStartup(void *)
+void* GTKStartup(void *arg)
 {
 	gtk_init(0, 0x0);
+	char *preferencesPath = (char *)arg;
+	
+	idle_icon = gdk_pixbuf_new_from_inline(-1, mm_idle, false, NULL);
+	connected_icon = gdk_pixbuf_new_from_inline(-1, mm_connected, false, NULL);
+	
 	tray = gtk_status_icon_new();
 	
 	GtkWidget *menu = gtk_menu_new(),
 		  *menuPreferences = gtk_menu_item_new_with_label("Preferences"),
 		  *menuAbout = gtk_menu_item_new_with_label("About"),
+		  *menuRestart = gtk_menu_item_new_with_label("Restart"),
 		  *menuQuit = gtk_menu_item_new_with_label("Quit");
-	g_signal_connect(G_OBJECT(menuPreferences), "activate", G_CALLBACK(GTKPreferences), NULL);
+	
+	if (preferencesPath != NULL) {
+		g_signal_connect(G_OBJECT(menuPreferences), "activate", G_CALLBACK(GTKPreferences), (gpointer)preferencesPath);
+	}
 	g_signal_connect(G_OBJECT(menuAbout), "activate", G_CALLBACK(GTKTrayAbout), NULL);
+	g_signal_connect(G_OBJECT(menuRestart), "activate", G_CALLBACK(GTKTrayRestart), NULL);
 	g_signal_connect(G_OBJECT(menuQuit), "activate", G_CALLBACK(GTKTrayQuit), NULL);
-	gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuPreferences);
+	
+	if (preferencesPath != NULL) {
+		gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuPreferences);
+	}
 	gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuAbout);
 	gtk_menu_shell_append(GTK_MENU_SHELL(menu), gtk_separator_menu_item_new());
+	gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuRestart);
 	gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuQuit);
 	gtk_widget_show_all(menu);
 
 	g_signal_connect(G_OBJECT(tray), "popup-menu", G_CALLBACK(GTKTrayMenu), menu);
 	gtk_status_icon_set_tooltip(tray, TOOLBAR_LABEL_DEFAULT);
-	gtk_status_icon_set_from_icon_name(tray, TOOLBAR_ICON_DEFAULT);
-	gtk_status_icon_set_from_file(tray, TOOLBAR_ICON_DEFAULT);
+	gtk_status_icon_set_from_pixbuf(tray, idle_icon);
 	gtk_status_icon_set_visible(tray, TRUE);
 
 	gtk_main();

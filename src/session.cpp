@@ -45,7 +45,7 @@ void* MobileMouseSession(void* context)
 	delete static_cast<SessionContext*>(context);
 
 	XMouseInterface mousePointer;
-	XKeyboardInterface keyBoard;
+	XKeyboardInterface keyBoard(appConfig.getKeyboardEnabled());
 
 	syslog(LOG_INFO, "[%s] connected", address.c_str());
 
@@ -76,7 +76,12 @@ void* MobileMouseSession(void* context)
 		close(client);
 		return NULL;
 	}
-
+	
+	if (appConfig.getDebug()) {
+		syslog(LOG_INFO, "[%s] device id: %s", address.c_str(), id.c_str());
+		syslog(LOG_INFO, "[%s] device name: %s", address.c_str(), name.c_str());
+	}
+	
 	/* verify device.id */
 	if (!appConfig.getDevices().empty() &&
 			appConfig.getDevices().find(id) == appConfig.getDevices().end())
@@ -287,6 +292,7 @@ void* MobileMouseSession(void* context)
 		}
 		
 		/* zooming */
+		/* consider handling in/out zoom as generic spread/pinch gesture hotkeys */ 
 		std::string zoom;
 		if (pcrecpp::RE("ZOOM\x1e(-?\\d+)\x04").FullMatch(packet, &zoom))
 		{
@@ -431,6 +437,28 @@ void* MobileMouseSession(void* context)
 			{
 				keys.push_back(keyCode);
 				keyBoard.SendKey(keys);
+				continue;
+			}
+		}
+
+		/* gestures */
+		std::string gesture;
+		if (pcrecpp::RE("GESTURE\x1e(.*?)\x04").FullMatch(packet, &gesture)) {
+			int hotkey = 0;
+			if (gesture == "TWOFINGERDOUBLETAP")   hotkey = 7;
+			if (gesture == "THREEFINGERSINGLETAP") hotkey = 8;
+			if (gesture == "THREEFINGERDOUBLETAP") hotkey = 9;
+			if (gesture == "FOURFINGERPINCH")      hotkey = 10;
+			if (gesture == "FOURFINGERSPREAD")     hotkey = 11;
+			if (gesture == "FOURFINGERSWIPELEFT")  hotkey = 12;
+			if (gesture == "FOURFINGERSWIPERIGHT") hotkey = 13;
+			if (gesture == "FOURFINGERSWIPEUP")    hotkey = 14;
+			if (gesture == "FOURFINGERSWIPEDOWN")  hotkey = 15;
+			if (hotkey != 0) {
+				std::string command = appConfig.getHotKeyCommand(hotkey);
+				if (!command.empty()) {
+					system(command.c_str());
+				}
 				continue;
 			}
 		}

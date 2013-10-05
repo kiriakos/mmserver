@@ -12,8 +12,8 @@ FILE(GLOB_RECURSE SOURCE_FILES src/*.cpp)
 SET(CMAKE_CXX_FLAGS_RELEASE "-s -Wall -Wextra -Wconversion")
 
 SET(MMSERVER_VERSION_MAJOR 1)
-SET(MMSERVER_VERSION_MINOR 3)
-SET(MMSERVER_VERSION_PATCH 1)
+SET(MMSERVER_VERSION_MINOR 4)
+SET(MMSERVER_VERSION_PATCH 0)
 
 CONFIGURE_FILE(
 	"${CMAKE_SOURCE_DIR}/src/version.hpp"
@@ -77,16 +77,12 @@ INSTALL(PROGRAMS "${CMAKE_SOURCE_DIR}/share/mmserver.desktop"
 	DESTINATION "/usr/share/gnome/autostart"
 	PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
 
-# Installation of Gnome Menu Icon
+# Installation of Gnome menu item
 INSTALL(PROGRAMS "${CMAKE_SOURCE_DIR}/share/mmserver.desktop"
 	DESTINATION "/usr/share/applications"
 	PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
 
-# Installation of icons
-INSTALL(PROGRAMS "${CMAKE_SOURCE_DIR}/share/mm-idle.svg"
-	DESTINATION "/usr/share/mmserver/icons"
-	PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
-
-INSTALL(PROGRAMS "${CMAKE_SOURCE_DIR}/share/mm-connected.svg"
+# Installation of icon (used for menu item)
+INSTALL(PROGRAMS "${CMAKE_SOURCE_DIR}/icons/mm-idle.svg"
 	DESTINATION "/usr/share/mmserver/icons"
 	PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)

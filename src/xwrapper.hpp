@@ -48,7 +48,7 @@ class XMouseInterface
 class XKeyboardInterface
 {
 	public:
-		XKeyboardInterface(const std::string display = "");
+		XKeyboardInterface(bool enabled = true, const std::string display = "");
 		~XKeyboardInterface();
 
 		void SendKey(const std::list<int>& keycode);
@@ -58,7 +58,8 @@ class XKeyboardInterface
 		
 	private:
 
-		Display *m_display; 
+		Display *m_display;
+		bool keyboardEnabled;
 };
 
 

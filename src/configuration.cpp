@@ -32,6 +32,7 @@ Configuration::Configuration()
 , m_mouseAccelerationFactor(4)
 , m_mouseHorizontalScrolling(false)
 , m_mouseScrollMax(1)
+, m_keyboardEnabled(true)
 , m_keyboardLayout("iso-8859-1")
 {
 	char hostname[256];
@@ -117,6 +118,11 @@ void Configuration::Read(const std::string& file)
 		}
 	}
 
+	if (config.exists("keyboard.enabled")) 
+	{
+		m_keyboardEnabled = (bool)config.lookup("keyboard.enabled");
+	}
+	
 	if (config.exists("keyboard.layout"))
 	{
 		m_keyboardLayout = (const char*)config.lookup("keyboard.layout");
@@ -167,6 +173,21 @@ void Configuration::Read(const std::string& file)
 				(const char*)config.lookup("mouse.hotkeys.key2.command")
 				);
 	}
+	
+	/* gesture commands */
+
+#define GESTURE_HOTKEY_CONFIG(path, key) if(config.exists((path))) m_hotkeys[(key)] = std::make_pair("", (const char*)config.lookup((path)))
+	GESTURE_HOTKEY_CONFIG("gestures.twofingerdoubletap", 7);
+	GESTURE_HOTKEY_CONFIG("gestures.threefingersingletap", 8);
+	GESTURE_HOTKEY_CONFIG("gestures.threefingerdoubletap", 9);
+	GESTURE_HOTKEY_CONFIG("gestures.fourfingerpinch", 10);
+	GESTURE_HOTKEY_CONFIG("gestures.fourfingerspread", 11);
+	GESTURE_HOTKEY_CONFIG("gestures.fourfingerswipeleft", 12);
+	GESTURE_HOTKEY_CONFIG("gestures.fourfingerswiperight", 13);
+	GESTURE_HOTKEY_CONFIG("gestures.fourfingerswipeup", 14);
+	GESTURE_HOTKEY_CONFIG("gestures.fourfingerswipedown", 15);
+#undef GESTURE_HOTKEY_CONFIG
+
 }
 
 const std::string& Configuration::getHostname() const
@@ -222,6 +243,11 @@ bool Configuration::getMouseHorizontalScrolling() const
 int Configuration::getMouseScrollMax() const
 {
 	return m_mouseScrollMax;
+}
+
+bool Configuration::getKeyboardEnabled() const
+{
+	return m_keyboardEnabled;
 }
 
 const std::string& Configuration::getKeyboardLayout() const

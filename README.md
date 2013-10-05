@@ -8,9 +8,12 @@ Use your iOS or Android device as a network mouse and keyboard for your Linux co
 - Added support for horizontal scrolling.
 - Added user-configurable scrolling speed limit.
 - Added support for middle mouse button.
+- Added support for gesture commands.
 - Fixed numeric keypad input of numerals.
 - Fixed keyboard input of capital letters and some other characters (hack).
-- Other minor changes and simplifications.
+- Added options to disable keyboard input and zeroconf networking.
+- Changed config file loading to simplify startup and first run.
+- Other minor changes.
 
 ## Installation
 
@@ -36,6 +39,12 @@ sudo make install
 ```
 
 Invoke by running `mmserver` or by choosing *Mobile Mouse Server for Linux* from your system menu.
+
+## Security
+
+The Mobile Mouse protocol is unencrypted. Among other things, this means your key presses are transmitted in plain text, so an eavesdropper connected to your network could easily monitor your input (including passwords) without otherwise compromising your computer or mobile device. I therefore recommend not using Mobile Mouse on public networks. If you must, at least refrain from entering sensitive text.
+
+Additionally, I recommend using the `device.id` and `device.password` configuration settings to restrict Mobile Mouse connections to approved devices.
 
 ## Compatibility
 
