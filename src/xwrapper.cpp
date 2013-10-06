@@ -208,7 +208,6 @@ bool XClipboardInterface::Update(void) {
 		
 		if (clipcache.compare(0, std::string::npos, (char *)sel_buf, sel_len) != 0) {
 			clipcache.assign((char *)sel_buf, (int)sel_len);
-			printf("%*s\n", (int)sel_len, (char *)sel_buf); 
 			updated = true;
 		}
 		
@@ -219,4 +218,8 @@ bool XClipboardInterface::Update(void) {
     }
     
     return updated;
+}
+
+const char *XClipboardInterface::GetCStr(void) {
+	return clipcache.c_str();
 }

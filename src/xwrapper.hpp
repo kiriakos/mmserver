@@ -69,6 +69,7 @@ class XClipboardInterface
 		~XClipboardInterface();
 
 		bool Update(void);
+		const char *GetCStr(void);
 	
 	private:
 		Display *m_display;
