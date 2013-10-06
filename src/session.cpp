@@ -450,11 +450,7 @@ void* MobileMouseSession(void* context)
 			if (gesture == "THREEFINGERSINGLETAP") {
 				//hotkey = 8;
 				// temporary use this gesture to pull clipboard content to MM app
-				if(!clipboard.Retrieve(client)) {
-					syslog(LOG_ERR, "clip fail");
-					close(client);
-					break;
-				}
+				clipboard.Update();
 			}
 			if (gesture == "THREEFINGERDOUBLETAP") hotkey = 9;
 			if (gesture == "FOURFINGERPINCH")      hotkey = 10;

@@ -172,8 +172,7 @@ XClipboardInterface::~XClipboardInterface() {
 	XCloseDisplay(m_display);
 }
 
-
-bool XClipboardInterface::Retrieve(int client) {
+bool XClipboardInterface::Update(void) {
 	
     unsigned char *sel_buf;     /* buffer for selection data */
     unsigned long sel_len = 0;  /* length of sel_buf */
@@ -181,6 +180,7 @@ bool XClipboardInterface::Retrieve(int client) {
     unsigned int context = XCLIB_XCOUT_NONE;
 	Atom sseln = XA_CLIPBOARD(m_display);	/* X selection to work with */
 	Atom target = XA_STRING;
+	bool updated = false;
 
 	while (1) {
 		/* only get an event if xcout() is doing something */
@@ -206,21 +206,17 @@ bool XClipboardInterface::Retrieve(int client) {
 
     if (sel_len) {
 		
-		// need to apply more scrutiny to buffer sizes here
-		char m[1024];
-		snprintf(m, sizeof(m), "CLIPBOARDUPDATE\x1e" "TEXT\x1f" "%*s\x04", (int)sel_len, sel_buf);
-			
+		if (clipcache.compare(0, std::string::npos, (char *)sel_buf, sel_len) != 0) {
+			clipcache.assign((char *)sel_buf, (int)sel_len);
+			printf("%*s\n", (int)sel_len, (char *)sel_buf); 
+			updated = true;
+		}
+		
 		if (sseln == XA_STRING)
 			XFree(sel_buf);
 		else
 			free(sel_buf);
-		
-		// send the clipboard contents back to the Mobile Mouse app
-		// 
-		if (write(client, (const char*)m, strlen((const char*)m)) < 1){
-			return false;
-		}
     }
     
-    return true;
+    return updated;
 }

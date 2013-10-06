@@ -68,11 +68,12 @@ class XClipboardInterface
 		XClipboardInterface(const std::string display = "");
 		~XClipboardInterface();
 
-		bool Retrieve(int client);
+		bool Update(void);
 	
 	private:
 		Display *m_display;
 		Window m_window;
+		std::string clipcache;
 };
 
 #endif
