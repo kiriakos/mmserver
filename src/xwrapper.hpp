@@ -68,7 +68,7 @@ class XClipboardInterface
 		XClipboardInterface(const std::string display = "");
 		~XClipboardInterface();
 
-		void DumpClipboard(void);
+		bool Retrieve(int client);
 	
 	private:
 		Display *m_display;

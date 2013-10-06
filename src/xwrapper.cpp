@@ -23,7 +23,7 @@
 #include <X11/XKBlib.h>
 #include <stdexcept>
 #include <stdlib.h>
-
+#include <unistd.h>
 #include <stdio.h>
 #include <X11/Xatom.h>
 #include <X11/Xmu/Atoms.h>
@@ -172,14 +172,15 @@ XClipboardInterface::~XClipboardInterface() {
 	XCloseDisplay(m_display);
 }
 
-void XClipboardInterface::DumpClipboard(void) {
+
+bool XClipboardInterface::Retrieve(int client) {
 	
     unsigned char *sel_buf;     /* buffer for selection data */
     unsigned long sel_len = 0;  /* length of sel_buf */
     XEvent evt;                 /* X Event Structures */
     unsigned int context = XCLIB_XCOUT_NONE;
 	Atom sseln = XA_CLIPBOARD(m_display);	/* X selection to work with */
-	Atom target = XA_STRING; // UTF8_STRING
+	Atom target = XA_STRING;
 
 	while (1) {
 		/* only get an event if xcout() is doing something */
@@ -204,14 +205,22 @@ void XClipboardInterface::DumpClipboard(void) {
 	}
 
     if (sel_len) {
-		/* only print the buffer out, and free it, if it's not
-		 * empty
-		 */
-		fwrite(sel_buf, sizeof(char), sel_len, stdout);
-		fflush(stdout);
+		
+		// need to apply more scrutiny to buffer sizes here
+		char m[1024];
+		snprintf(m, sizeof(m), "CLIPBOARDUPDATE\x1e" "TEXT\x1f" "%*s\x04", (int)sel_len, sel_buf);
+			
 		if (sseln == XA_STRING)
 			XFree(sel_buf);
 		else
 			free(sel_buf);
+		
+		// send the clipboard contents back to the Mobile Mouse app
+		// 
+		if (write(client, (const char*)m, strlen((const char*)m)) < 1){
+			return false;
+		}
     }
+    
+    return true;
 }
