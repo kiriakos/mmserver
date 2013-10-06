@@ -37,6 +37,15 @@
 #include "xwrapper.hpp"
 #include "utils.hpp"
 
+void InvokeCommand(const std::string command) {
+	
+	if (command.empty()) {
+		return;
+	}
+	
+	system(command.c_str());
+}
+
 void* MobileMouseSession(void* context)
 {
 	Configuration& appConfig = static_cast<SessionContext*>(context)->m_appConfig;
@@ -457,9 +466,7 @@ void* MobileMouseSession(void* context)
 			if (gesture == "FOURFINGERSWIPEDOWN")  hotkey = 15;
 			if (hotkey != 0) {
 				std::string command = appConfig.getHotKeyCommand(hotkey);
-				if (!command.empty()) {
-					system(command.c_str());
-				}
+				InvokeCommand(command);
 				continue;
 			}
 		}
@@ -469,8 +476,7 @@ void* MobileMouseSession(void* context)
 		if (pcrecpp::RE("HOTKEY\x1eHK(\\d)\x04").FullMatch(packet, &hotkey))
 		{
 			std::string command = appConfig.getHotKeyCommand((unsigned int)strtoul(hotkey.c_str(), 0x0, 10));
-			if (!command.empty())
-				system(command.c_str());
+			InvokeCommand(command);
 			continue;
 		}
 		if (pcrecpp::RE("HOTKEY\x1e(B[12])\x04").FullMatch(packet, &hotkey))
@@ -491,8 +497,8 @@ void* MobileMouseSession(void* context)
 			if (hotkey == "B2") {
 				command = appConfig.getHotKeyCommand(6);
 			}
-			if (!command.empty())
-				system(command.c_str());
+			
+			InvokeCommand(command);
 			continue;
 		}
 
