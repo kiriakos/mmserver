@@ -447,11 +447,7 @@ void* MobileMouseSession(void* context)
 		if (pcrecpp::RE("GESTURE\x1e(.*?)\x04").FullMatch(packet, &gesture)) {
 			int hotkey = 0;
 			if (gesture == "TWOFINGERDOUBLETAP")   hotkey = 7;
-			if (gesture == "THREEFINGERSINGLETAP") {
-				//hotkey = 8;
-				// temporary use this gesture to pull clipboard content to MM app
-				clipboard.Update();
-			}
+			if (gesture == "THREEFINGERSINGLETAP") hotkey = 8;
 			if (gesture == "THREEFINGERDOUBLETAP") hotkey = 9;
 			if (gesture == "FOURFINGERPINCH")      hotkey = 10;
 			if (gesture == "FOURFINGERSPREAD")     hotkey = 11;
