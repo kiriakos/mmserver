@@ -37,13 +37,41 @@
 #include "xwrapper.hpp"
 #include "utils.hpp"
 
-void InvokeCommand(const std::string command) {
+/*
+ * Parameters:
+ *   command, string containing command to execute (unless recognized as special control code)
+ *   clip, reference to the clipboard interface
+ *   client, for use by any control codes that need to communicate with the client app
+ * 
+ * Return:
+ *   1 if error occurred communicating with client
+ *   0 otherwise
+ */
+int InvokeCommand(const std::string command, XClipboardInterface& clip, int client) {
 	
 	if (command.empty()) {
-		return;
+		return 0;
 	}
 	
-	system(command.c_str());
+	/* special case commands */
+	if (command.compare("SYNC_CLIPBOARD") == 0) {
+		
+		/* clipboard sync request */
+		char m[1024];
+		clip.Update();
+		snprintf(m, sizeof(m), "CLIPBOARDUPDATE\x1e" "TEXT\x1f" "%s\x04", clip.GetCStr());
+		if (write(client, (const char*)m, strlen((const char*)m)) < 1) {
+			return 1;
+		}
+		
+	}
+	else {
+		
+		/* interpret all other commands literally */
+		system(command.c_str());
+	}
+	
+	return 0;
 }
 
 void* MobileMouseSession(void* context)
@@ -466,7 +494,11 @@ void* MobileMouseSession(void* context)
 			if (gesture == "FOURFINGERSWIPEDOWN")  hotkey = 15;
 			if (hotkey != 0) {
 				std::string command = appConfig.getHotKeyCommand(hotkey);
-				InvokeCommand(command);
+				if (InvokeCommand(command, clipboard, client)) {
+					syslog(LOG_INFO, "[%s] disconnected (write failed: %s)", address.c_str(), strerror(errno));
+					close(client);
+					break;
+				}
 				continue;
 			}
 		}
@@ -476,7 +508,11 @@ void* MobileMouseSession(void* context)
 		if (pcrecpp::RE("HOTKEY\x1eHK(\\d)\x04").FullMatch(packet, &hotkey))
 		{
 			std::string command = appConfig.getHotKeyCommand((unsigned int)strtoul(hotkey.c_str(), 0x0, 10));
-			InvokeCommand(command);
+			if(InvokeCommand(command, clipboard, client)) {
+				syslog(LOG_INFO, "[%s] disconnected (write failed: %s)", address.c_str(), strerror(errno));
+				close(client);
+				break;
+			}
 			continue;
 		}
 		if (pcrecpp::RE("HOTKEY\x1e(B[12])\x04").FullMatch(packet, &hotkey))
@@ -498,7 +534,11 @@ void* MobileMouseSession(void* context)
 				command = appConfig.getHotKeyCommand(6);
 			}
 			
-			InvokeCommand(command);
+			if (InvokeCommand(command, clipboard, client)) {
+				syslog(LOG_INFO, "[%s] disconnected (write failed: %s)", address.c_str(), strerror(errno));
+				close(client);
+				break;
+			}
 			continue;
 		}
 
