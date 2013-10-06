@@ -1,6 +1,4 @@
 /*
- *  
- * 
  *  xclib.h - header file for functions in xclib.c
  *  Copyright (C) 2001 Kim Saunders
  *  Copyright (C) 2007-2008 Peter Åstrand
@@ -27,11 +25,6 @@
 #define XCLIB_XCOUT_INCR	2	/* in an incr loop */
 #define XCLIB_XCOUT_FALLBACK	3	/* UTF8_STRING failed, need fallback to XA_STRING */
 
-/* xcin() contexts */
-#define XCLIB_XCIN_NONE		0
-#define XCLIB_XCIN_SELREQ	1
-#define XCLIB_XCIN_INCR		2
-
 /* functions in xclib.c */
 extern int xcout(
 	Display*,
@@ -43,18 +36,3 @@ extern int xcout(
 	unsigned long*,
 	unsigned int*
 );
-extern int xcin(
-	Display*,
-	Window*,
-	XEvent,
-	Atom*,
-	Atom,
-	unsigned char*,
-	unsigned long,
-	unsigned long*,
-	unsigned int*
-);
-extern void *xcmalloc(size_t);
-extern void *xcrealloc(void*, size_t);
-extern void *xcstrdup(const char *);
-extern void xcmemcheck(void*);

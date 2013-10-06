@@ -62,5 +62,17 @@ class XKeyboardInterface
 		bool keyboardEnabled;
 };
 
+class XClipboardInterface
+{
+	public:
+		XClipboardInterface(const std::string display = "");
+		~XClipboardInterface();
+
+		void DumpClipboard(void);
+	
+	private:
+		Display *m_display;
+		Window m_window;
+};
 
 #endif

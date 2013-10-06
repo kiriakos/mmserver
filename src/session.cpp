@@ -46,6 +46,7 @@ void* MobileMouseSession(void* context)
 
 	XMouseInterface mousePointer;
 	XKeyboardInterface keyBoard(appConfig.getKeyboardEnabled());
+	XClipboardInterface clipboard;
 
 	syslog(LOG_INFO, "[%s] connected", address.c_str());
 
