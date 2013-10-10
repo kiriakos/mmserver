@@ -69,6 +69,7 @@ class XClipboardInterface
 		~XClipboardInterface();
 
 		bool Update(void);
+		const std::string GetString(void);
 		const char *GetCStr(void);
 	
 	private:
