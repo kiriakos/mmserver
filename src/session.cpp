@@ -56,37 +56,37 @@ int InvokeCommand(const std::string command, XClipboardInterface& clip, int clie
 	
 	/* special case commands */
 	if (command.compare("SYNC_CLIPBOARD") == 0) {
-		if (clip.Update()) {
-			
-			char *message = NULL;
-			const char *content = clip.GetCStr();
-			
-			/*
-			15 - CLIPBOARDUPDATE
-			4  - TEXT
-			3  - (control bytes)
-			1  - (null end byte)
-			--------------------
-			23 - (message setup)
-			*/
-			
-			if ((message = (char *)malloc(23 + strlen(content))) == NULL) {
-				return 1;
-			}
-			
-			strcpy(message, "CLIPBOARDUPDATE\x1e" "TEXT\x1f");
-			strcat(message, content);
-			strcat(message, "\x04");
-			
-			syslog(LOG_INFO, "clipboard update message length: %d", strlen(message));
-			
-			if (write(client, (const char*)message, strlen(message)) < 1) {
-				free(message);
-				return 2;
-			}
-			
-			free(message);
+		char *message = NULL;
+		const char *content = NULL;
+		
+		clip.Update();
+		content = clip.GetCStr();
+		
+		/*
+		15 - CLIPBOARDUPDATE
+		4  - TEXT
+		3  - (control bytes)
+		1  - (null end byte)
+		--------------------
+		23 - (message setup)
+		*/
+		
+		if ((message = (char *)malloc(23 + strlen(content))) == NULL) {
+			return 1;
 		}
+		
+		strcpy(message, "CLIPBOARDUPDATE\x1e" "TEXT\x1f");
+		strcat(message, content);
+		strcat(message, "\x04");
+		
+		syslog(LOG_INFO, "clipboard update message length: %d", strlen(message));
+		
+		if (write(client, (const char*)message, strlen(message)) < 1) {
+			free(message);
+			return 2;
+		}
+		
+		free(message);
 	}
 	else {
 		
