@@ -44,6 +44,7 @@
  *   client, for use by any control codes that need to communicate with the client app
  * 
  * Return:
+ *   2 if a memory allocation or string operation failed
  *   1 if error occurred communicating with client
  *   0 otherwise
  */
@@ -57,7 +58,9 @@ int InvokeCommand(const std::string command, XClipboardInterface& clip, int clie
 	if (command.compare("SYNC_CLIPBOARD") == 0) {
 		if (clip.Update()) {
 			
-			char m[1024];
+			char *message = NULL;
+			const char *content = clip.GetCStr();
+			
 			/*
 			15 - CLIPBOARDUPDATE
 			4  - TEXT
@@ -65,24 +68,24 @@ int InvokeCommand(const std::string command, XClipboardInterface& clip, int clie
 			1  - (null end byte)
 			--------------------
 			23 - (message setup)
-			--------------------
-			1001 of 1024 available
 			*/
-			 
-			if (snprintf(m, sizeof(m), "CLIPBOARDUPDATE\x1e" "TEXT\x1f" "%s\x04", clip.GetCStr()) >= 1024) {
-				
-				/* if clip text exceeds available 1001 bytes, expected \x04
-				 * message terminator may be missing, so forcefully append it.
-				 * (the content is already truncated in this case anyway; this
-				 * just prevents the client from discarding it as malformed) */
-				m[1022] = '\x04';
-				m[1023] = '\0';
-			}
 			
-			if (write(client, (const char*)m, strlen((const char*)m)) < 1) {
-				syslog(LOG_ERR, "clipboardupdate failed");
+			if ((message = (char *)malloc(23 + strlen(content))) == NULL) {
 				return 1;
 			}
+			
+			strcpy(message, "CLIPBOARDUPDATE\x1e" "TEXT\x1f");
+			strcat(message, content);
+			strcat(message, "\x04");
+			
+			syslog(LOG_INFO, "clipboard update message length: %d", strlen(message));
+			
+			if (write(client, (const char*)message, strlen(message)) < 1) {
+				free(message);
+				return 2;
+			}
+			
+			free(message);
 		}
 	}
 	else {
