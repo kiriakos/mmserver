@@ -55,15 +55,35 @@ int InvokeCommand(const std::string command, XClipboardInterface& clip, int clie
 	
 	/* special case commands */
 	if (command.compare("SYNC_CLIPBOARD") == 0) {
-		
-		/* clipboard sync request */
-		char m[1024];
-		clip.Update();
-		snprintf(m, sizeof(m), "CLIPBOARDUPDATE\x1e" "TEXT\x1f" "%s\x04", clip.GetCStr());
-		if (write(client, (const char*)m, strlen((const char*)m)) < 1) {
-			return 1;
+		if (clip.Update()) {
+			
+			char m[1024];
+			/*
+			15 - CLIPBOARDUPDATE
+			4  - TEXT
+			3  - (control bytes)
+			1  - (null end byte)
+			--------------------
+			23 - (message setup)
+			--------------------
+			1001 of 1024 available
+			*/
+			 
+			if (snprintf(m, sizeof(m), "CLIPBOARDUPDATE\x1e" "TEXT\x1f" "%s\x04", clip.GetCStr()) >= 1024) {
+				
+				/* if clip text exceeds available 1001 bytes, expected \x04
+				 * message terminator may be missing, so forcefully append it.
+				 * (the content is already truncated in this case anyway; this
+				 * just prevents the client from discarding it as malformed) */
+				m[1022] = '\x04';
+				m[1023] = '\0';
+			}
+			
+			if (write(client, (const char*)m, strlen((const char*)m)) < 1) {
+				syslog(LOG_ERR, "clipboardupdate failed");
+				return 1;
+			}
 		}
-		
 	}
 	else {
 		
