@@ -8,7 +8,5 @@ sudo yum install\
 		pcre-devel\
 		avahi-devel\
 		libconfig-devel\
-		gtk2-devel
-
-# alternative dependency list, purportedly for arch linux pacman
-# pkgs="cmake gcc libx11 libxtst lib32-pcre pcre avahi libconfig gtk2"
+		gtk2-devel\
+		libXmu-devel libXt-devel
