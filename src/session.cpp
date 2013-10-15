@@ -278,8 +278,8 @@ void* MobileMouseSession(void* context)
 		}
 		
 		/* mouse clicks */
-		std::string key, state;
- 		if (pcrecpp::RE("CLICK\x1e([LR])\x1e([DU])\x1e\x04").FullMatch(packet, &key, &state))
+		std::string key, state, modifier;
+ 		if (pcrecpp::RE("CLICK\x1e([LR])\x1e([DU])\x1e(.*?)\x04").FullMatch(packet, &key, &state, &modifier))
 		{
 			if (key == "L")
 				mousePointer.MouseLeft(state == "D"?
@@ -360,7 +360,7 @@ void* MobileMouseSession(void* context)
 		}
 
 		/* key board */
-		std::string chr, utf8, modifier;
+		std::string chr, utf8;
 		if (pcrecpp::RE("KEY\x1e(.*?)\x1e(.*?)\x1e(.*?)\x04").FullMatch(packet, &chr, &utf8, &modifier))
 		{
 			std::list<int> keys;
