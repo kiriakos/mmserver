@@ -322,7 +322,7 @@ void* MobileMouseSession(void* context)
 
 		/* mouse scrolling */
 		std::string xs, ys;
-		if (pcrecpp::RE("SCROLL\x1e(-?\\d+)\x1e(-?\\d+)\x1e\x04").FullMatch(packet, &xs, &ys))
+		if (pcrecpp::RE("SCROLL\x1e(-?\\d+)\x1e(-?\\d+)\x1e(.*?)\x04").FullMatch(packet, &xs, &ys, &modifier))
 		{			
 			int dx, dy;
 			dx = appConfig.getMouseHorizontalScrolling() ? (int)strtol(xs.c_str(), NULL, 10) : 0;
