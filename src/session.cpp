@@ -553,7 +553,21 @@ void* MobileMouseSession(void* context)
 			}
 			continue;
 		}
-		
+
+		/* handle keystrings... eg. ".com" */
+		std::string keystring;
+		if (pcrecpp::RE("KEYSTRING\x1e(.*?)\x04").FullMatch(packet, &keystring))
+		{
+			std::list<int> keys;
+			for (std::string::const_iterator i = keystring.begin();
+					i != keystring.end(); i++)
+			{
+				keys.push_back(*i);
+			}
+			keyBoard.SendKey(keys);
+			continue;
+		}
+
 		/* screens */
 		std::string mode;
 		if (pcrecpp::RE("SWITCHMODE\x1e(.*?)\x04").FullMatch(packet, &mode))
