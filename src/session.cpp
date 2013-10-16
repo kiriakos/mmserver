@@ -490,7 +490,22 @@ void* MobileMouseSession(void* context)
 				continue;
 			}
 		}
-
+		
+		/* handle keystrings... eg. ".com" */
+		std::string keystring;
+		if (pcrecpp::RE("KEYSTRING\x1e(.*?)\x04").FullMatch(packet, &keystring))
+		{
+			std::list<int> keys;
+			syslog(LOG_INFO, "keystring: <%s>", keystring.c_str());
+			for (std::string::const_iterator i = keystring.begin();
+					i != keystring.end(); i++)
+			{
+				keys.push_back(*i);
+			}
+			keyBoard.SendKey(keys);
+			continue;
+		}
+		
 		/* gestures */
 		std::string gesture;
 		if (pcrecpp::RE("GESTURE\x1e(.*?)\x04").FullMatch(packet, &gesture)) {
@@ -553,21 +568,7 @@ void* MobileMouseSession(void* context)
 			}
 			continue;
 		}
-
-		/* handle keystrings... eg. ".com" */
-		std::string keystring;
-		if (pcrecpp::RE("KEYSTRING\x1e(.*?)\x04").FullMatch(packet, &keystring))
-		{
-			std::list<int> keys;
-			for (std::string::const_iterator i = keystring.begin();
-					i != keystring.end(); i++)
-			{
-				keys.push_back(*i);
-			}
-			keyBoard.SendKey(keys);
-			continue;
-		}
-
+		
 		/* screens */
 		std::string mode;
 		if (pcrecpp::RE("SWITCHMODE\x1e(.*?)\x04").FullMatch(packet, &mode))
