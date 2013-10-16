@@ -492,14 +492,18 @@ void* MobileMouseSession(void* context)
 		}
 		
 		/* handle keystrings... eg. ".com" */
+		/* should utilize same core as key handler above rather than grody duplication */
 		std::string keystring;
 		if (pcrecpp::RE("KEYSTRING\x1e(.*?)\x04").FullMatch(packet, &keystring))
 		{
 			std::list<int> keys;
-			syslog(LOG_INFO, "keystring: <%s>", keystring.c_str());
-			for (std::string::const_iterator i = keystring.begin();
-					i != keystring.end(); i++)
+			//syslog(LOG_INFO, "keystring: <%s>", keystring.c_str());
+			for (std::string::const_iterator i = keystring.begin(); i != keystring.end(); i++)
 			{
+				if (keyBoard.keysymIsShiftVariant((KeySym)*i)) {
+					keys.push_back(XK_Shift_L);
+				}
+				
 				keys.push_back(*i);
 			}
 			keyBoard.SendKey(keys);
