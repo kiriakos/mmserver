@@ -37,6 +37,26 @@
 #include "xwrapper.hpp"
 #include "utils.hpp"
 
+// pushes keysyms for any modifier keys named in `modifiers` onto the end of `keys`
+void SetModKeys(const std::string& modifiers, std::list<int> keys) {
+	std::list<std::string> modlist = SplitString(modifiers, '+');
+	for (std::list<std::string>::const_iterator i = modlist.begin(); i != modlist.end(); i++) {
+		if (*i == "CTRL") {
+			keys.push_back(XK_Control_L);
+		}
+		if (*i == "OPT") {
+			keys.push_back(XK_Super_L);
+		}
+		if (*i == "ALT") {
+			keys.push_back(XK_Alt_L);
+		}
+		if (*i == "SHIFT") {
+			keys.push_back(XK_Shift_L);
+		}
+		// consider logging any unhandled tokens
+	}
+}
+
 /*
  * Parameters:
  *   command, string containing command to execute (unless recognized as special control code)
