@@ -115,6 +115,8 @@ XKeyboardInterface::~XKeyboardInterface()
 	}
 }
 
+// this version of sendkey takes a single keycode.
+// it justs packs it in a list and passes it on to the more general form of Sendkey
 void XKeyboardInterface::SendKey(int keycode)
 {
 	std::list<int> keys;
@@ -135,29 +137,37 @@ bool XKeyboardInterface::keysymIsShiftVariant(KeySym key)
 	return false;
 }
 
+// this version of sendkey takes a list of keycodes
 void XKeyboardInterface::SendKey(const std::list<int>& keycode)
 {
 	if (!keyboardEnabled) {
 		return;
 	}
 	
-	for(std::list<int>::const_iterator i = keycode.begin();
-			i != keycode.end(); i++)
-	{
-		KeyCode key = XKeysymToKeycode(m_display, *i);
-		if(key == NoSymbol) continue;
+	PressKeys(keycode);
+	ReleaseKeys(keycode);
+	
+	XFlush(m_display);
+}
 
+void XKeyboardInterface::PressKeys(const std::list<int>& keys) {
+	for (std::list<int>::const_iterator i = keys.begin(); i != keys.end(); i++) {
+		KeyCode key = XKeysymToKeycode(m_display, *i);
+		if (key == NoSymbol) {
+			continue;
+		}
 		XTestFakeKeyEvent(m_display, key, True, CurrentTime);
 	}
-	for(std::list<int>::const_reverse_iterator i = keycode.rbegin();
-			i != keycode.rend(); i++)
-	{
-		KeyCode key = XKeysymToKeycode(m_display, *i);
-		if(key == NoSymbol) continue;
+}
 
+void XKeyboardInterface::ReleaseKeys(const std::list<int>& keys) {
+	for (std::list<int>::const_reverse_iterator i = keys.rbegin(); i != keys.rend(); i++) {
+		KeyCode key = XKeysymToKeycode(m_display, *i);
+		if (key == NoSymbol) {
+			continue;
+		}
 		XTestFakeKeyEvent(m_display, key, False, CurrentTime);
 	}
-	XFlush(m_display);
 }
 
 XClipboardInterface::XClipboardInterface(const std::string display) {

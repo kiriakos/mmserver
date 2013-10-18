@@ -53,7 +53,10 @@ class XKeyboardInterface
 
 		void SendKey(const std::list<int>& keycode);
 		void SendKey(int keycode);
-		bool KeyState(int keycode);
+		
+		void PressKeys(const std::list<int>& keys);
+		void ReleaseKeys(const std::list<int>& keys);
+		
 		bool keysymIsShiftVariant(KeySym key);
 		
 	private:
