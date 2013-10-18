@@ -146,8 +146,6 @@ void XKeyboardInterface::SendKey(const std::list<int>& keycode)
 	
 	PressKeys(keycode);
 	ReleaseKeys(keycode);
-	
-	XFlush(m_display);
 }
 
 void XKeyboardInterface::PressKeys(const std::list<int>& keys) {
@@ -158,6 +156,7 @@ void XKeyboardInterface::PressKeys(const std::list<int>& keys) {
 		}
 		XTestFakeKeyEvent(m_display, key, True, CurrentTime);
 	}
+	XFlush(m_display);
 }
 
 void XKeyboardInterface::ReleaseKeys(const std::list<int>& keys) {
@@ -168,6 +167,7 @@ void XKeyboardInterface::ReleaseKeys(const std::list<int>& keys) {
 		}
 		XTestFakeKeyEvent(m_display, key, False, CurrentTime);
 	}
+	XFlush(m_display);
 }
 
 XClipboardInterface::XClipboardInterface(const std::string display) {

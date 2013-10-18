@@ -38,7 +38,7 @@
 #include "utils.hpp"
 
 // pushes keysyms for any modifier keys named in `modifiers` onto the end of `keys`
-void SetModKeys(const std::string& modifiers, std::list<int> keys) {
+void SetModKeys(const std::string& modifiers, std::list<int>& keys) {
 	std::list<std::string> modlist = SplitString(modifiers, '+');
 	for (std::list<std::string>::const_iterator i = modlist.begin(); i != modlist.end(); i++) {
 		if (*i == "CTRL") {
@@ -301,14 +301,33 @@ void* MobileMouseSession(void* context)
 		std::string key, state, modifier;
  		if (pcrecpp::RE("CLICK\x1e([LR])\x1e([DU])\x1e(.*?)\x04").FullMatch(packet, &key, &state, &modifier))
 		{
-			if (key == "L")
-				mousePointer.MouseLeft(state == "D"?
-						XMouseInterface::BTN_DOWN:
-						XMouseInterface::BTN_UP);
-			if (key == "R")
-				mousePointer.MouseRight(state == "D"?
-						XMouseInterface::BTN_DOWN:
-						XMouseInterface::BTN_UP);
+			std::list<int> modkeys;
+			SetModKeys(modifier, modkeys);
+			
+			if (state == "D") {
+				if (!modkeys.empty()) {
+					keyBoard.PressKeys(modkeys);
+				}
+				if (key == "L") {
+					mousePointer.MouseLeft(XMouseInterface::BTN_DOWN);
+				}
+				if (key == "R") {
+					mousePointer.MouseRight(XMouseInterface::BTN_DOWN);
+				}
+			}
+			
+			if (state == "U") {
+				if (!modkeys.empty()) {
+					keyBoard.ReleaseKeys(modkeys);
+				}
+				if (key == "L") {
+					mousePointer.MouseLeft(XMouseInterface::BTN_UP);
+				}
+				if (key == "R") {
+					mousePointer.MouseRight(XMouseInterface::BTN_UP);
+				}
+			}
+			
 			continue;
 		}
 
