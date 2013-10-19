@@ -303,31 +303,6 @@ void* MobileMouseSession(void* context)
 		{
 			std::list<int> modkeys;
 			SetModKeys(modifier, modkeys);
-			/*
-			if (state == "D") {
-				if (!modkeys.empty()) {
-					keyBoard.PressKeys(modkeys);
-				}
-				if (key == "L") {
-					mousePointer.MouseLeft(XMouseInterface::BTN_DOWN);
-				}
-				if (key == "R") {
-					mousePointer.MouseRight(XMouseInterface::BTN_DOWN);
-				}
-			}
-			
-			if (state == "U") {
-				if (!modkeys.empty()) {
-					keyBoard.ReleaseKeys(modkeys);
-				}
-				if (key == "L") {
-					mousePointer.MouseLeft(XMouseInterface::BTN_UP);
-				}
-				if (key == "R") {
-					mousePointer.MouseRight(XMouseInterface::BTN_UP);
-				}
-			}
-			*/
 			
 			if (!modkeys.empty() && state == "D") {
 				keyBoard.PressKeys(modkeys);
