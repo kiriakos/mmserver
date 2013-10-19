@@ -303,7 +303,7 @@ void* MobileMouseSession(void* context)
 		{
 			std::list<int> modkeys;
 			SetModKeys(modifier, modkeys);
-			
+			/*
 			if (state == "D") {
 				if (!modkeys.empty()) {
 					keyBoard.PressKeys(modkeys);
@@ -326,6 +326,19 @@ void* MobileMouseSession(void* context)
 				if (key == "R") {
 					mousePointer.MouseRight(XMouseInterface::BTN_UP);
 				}
+			}
+			*/
+			
+			if (!modkeys.empty() && state == "D") {
+				keyBoard.PressKeys(modkeys);
+			}
+			
+			mousePointer.MouseClick(
+					key == "L" ? XMouseInterface::BTN_LEFT : XMouseInterface::BTN_RIGHT,
+					state == "D" ? XMouseInterface::BTN_DOWN : XMouseInterface::BTN_UP);
+			
+			if (!modkeys.empty() && state == "U") {
+				keyBoard.ReleaseKeys(modkeys);
 			}
 			
 			continue;
@@ -595,8 +608,8 @@ void* MobileMouseSession(void* context)
 			if (hotkey == "B1") {
 				command = appConfig.getHotKeyCommand(5);
 				if (command.empty()) {
-					mousePointer.MouseMiddle(XMouseInterface::BTN_DOWN);
-					mousePointer.MouseMiddle(XMouseInterface::BTN_UP);
+					mousePointer.MouseClick(XMouseInterface::BTN_MIDDLE, XMouseInterface::BTN_DOWN);
+					mousePointer.MouseClick(XMouseInterface::BTN_MIDDLE, XMouseInterface::BTN_UP);
 				}
 			}
 			// I don't know how to invoke B2.

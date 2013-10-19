@@ -28,17 +28,22 @@
 class XMouseInterface
 {
 	public:
+		
 		enum MouseState {
 			BTN_DOWN,
 			BTN_UP,
 		};
-
+		
+		enum MouseButton {
+			BTN_LEFT = 1,
+			BTN_MIDDLE = 2,
+			BTN_RIGHT = 3
+		}; 
+		
 		XMouseInterface(const std::string display = "");
 		~XMouseInterface();
-
-		void MouseLeft(MouseState state);
-		void MouseMiddle(MouseState state);
-		void MouseRight(MouseState state);
+		
+		void MouseClick(MouseButton button, MouseState state);
 		void MouseScroll(int x, int y);
 		void MouseMove(int x, int y);
 	private:

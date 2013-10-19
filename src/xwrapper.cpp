@@ -47,27 +47,8 @@ XMouseInterface::~XMouseInterface()
 	}
 }
 
-void XMouseInterface::MouseLeft(MouseState state)
-{
-	XTestFakeButtonEvent(m_display, 1,
-			state==BTN_DOWN?True:False,
-			CurrentTime);
-	XFlush(m_display);
-}
-
-void XMouseInterface::MouseMiddle(MouseState state)
-{
-	XTestFakeButtonEvent(m_display, 2,
-			state==BTN_DOWN?True:False,
-			CurrentTime);
-	XFlush(m_display);
-}
-
-void XMouseInterface::MouseRight(MouseState state)
-{
-	XTestFakeButtonEvent(m_display, 3,
-			state==BTN_DOWN?True:False,
-			CurrentTime);
+void XMouseInterface::MouseClick(MouseButton button, MouseState state) {
+	XTestFakeButtonEvent(m_display, button, state == BTN_DOWN ? True : False, CurrentTime);
 	XFlush(m_display);
 }
 
