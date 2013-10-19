@@ -492,23 +492,8 @@ void* MobileMouseSession(void* context)
 					keys.push_back(XK_Shift_L);
 				}
 			}
-
-			std::list<std::string> modlist = SplitString(modifier, '+');
-			for (std::list<std::string>::const_iterator i = modlist.begin();
-					i != modlist.end(); i++)
-			{
-				if (*i == "CTRL")
-					keys.push_back(XK_Control_L);
-				if (*i == "OPT")
-					keys.push_back(XK_Super_L);
-				if (*i == "ALT")
-					keys.push_back(XK_Alt_L);
-				// current mobile app doesn't seem to send shift modifiers
-				// but sends punctuation or capitalized characters directly
-				// eliminate test here, but infer shift if keycode != keysym above
-				/*if (*i == "SHIFT")
-					keys.push_back(XK_Shift_L);*/
-			}
+			
+			SetModKeys(modifier, keys);
 			
 			if (keyCode > 0)
 			{
