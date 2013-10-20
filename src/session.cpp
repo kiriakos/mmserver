@@ -503,15 +503,17 @@ void* MobileMouseSession(void* context)
 			}
 		}
 		
-		/* handle keystrings... eg. ".com" */
-		/* should utilize same core as key handler above rather than grody duplication */
+		/* keystrings */
 		std::string keystring;
 		if (pcrecpp::RE("KEYSTRING\x1e(.*?)\x04").FullMatch(packet, &keystring))
 		{
 			std::list<int> keys;
-			//syslog(LOG_INFO, "keystring: <%s>", keystring.c_str());
 			for (std::string::const_iterator i = keystring.begin(); i != keystring.end(); i++)
 			{
+				// keystrings are currently only generated when the client's shift-lock button
+				// is toggled on... so every character that could be a shift variant presumably is.
+				// Except for the last character, because keystrings are only sent once shift-lock
+				// is disabled and another character is entered (which is included). Weird.
 				if (keyBoard.keysymIsShiftVariant((KeySym)*i)) {
 					keys.push_back(XK_Shift_L);
 				}
