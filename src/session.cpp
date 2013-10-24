@@ -321,7 +321,7 @@ void* MobileMouseSession(void* context)
 
 		/* mouse movements */
 		std::string xp, yp;
-		if (pcrecpp::RE("MOVE\x1e(-?[\\d\x2e]+)\x1e(-?[\\d\x2e]+)\x1e[10]\x04").FullMatch(packet, &xp, &yp))
+		if (pcrecpp::RE("MOVE\x1e(-?[\\d\x2e]+)\x1e(-?[\\d\x2e]+)\x1e[10]\x1e?\x04").FullMatch(packet, &xp, &yp))
 		{
 			struct timeval currentMouseEvent;
 			gettimeofday(&currentMouseEvent, NULL);
