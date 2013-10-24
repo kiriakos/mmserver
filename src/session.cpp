@@ -811,6 +811,14 @@ void* MobileMouseSession(void* context)
 			}
 		}
 
+
+		/* promotional links */
+		std::string url;
+		if (pcrecpp::RE("OPENLINK\x1e(.*?)\x04").FullMatch(packet, &url)) {
+			syslog(LOG_INFO, "Promotional link: %s", url.c_str());
+			continue;
+		}
+
 		syslog(LOG_INFO, "[%s] unhandled packet: size(%lu)", address.c_str(), (long unsigned int)packet.size());
 
 		/* dump unhandled packets */
