@@ -304,8 +304,6 @@ void* MobileMouseSession(void* context)
 			std::list<int> modkeys;
 			SetModKeys(modifier, modkeys);
 			
-			syslog(LOG_INFO, "%s", packet.c_str());
-			
 			if (!modkeys.empty() && state == "D") {
 				keyBoard.PressKeys(modkeys);
 			}
