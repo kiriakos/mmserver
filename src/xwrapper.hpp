@@ -47,7 +47,12 @@ class XMouseInterface
 		void MouseScroll(int x, int y);
 		void MouseMove(int x, int y);
 	private:
-		Display *m_display; 
+		
+		void SetButtonState(MouseButton button, MouseState state);
+		XMouseInterface::MouseState GetButtonState(MouseButton button);
+		
+		Display *m_display;
+		MouseState left, middle, right;
 };
 
 class XKeyboardInterface

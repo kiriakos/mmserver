@@ -37,6 +37,10 @@ XMouseInterface::XMouseInterface(const std::string display)
 		// sorry for throwing in constructor...
 		throw std::runtime_error("cannot open xdisplay");
 	}
+	
+	SetButtonState(BTN_LEFT, BTN_UP);
+	SetButtonState(BTN_MIDDLE, BTN_UP);
+	SetButtonState(BTN_RIGHT, BTN_UP);
 }
 
 XMouseInterface::~XMouseInterface()
@@ -47,7 +51,36 @@ XMouseInterface::~XMouseInterface()
 	}
 }
 
+void XMouseInterface::SetButtonState(MouseButton button, MouseState state) {
+	if (button == BTN_LEFT) {
+		left = state;
+	} else if (button == BTN_MIDDLE) {
+		middle = state;
+	} else if (button == BTN_RIGHT) {
+		right = state;
+	}
+}
+
+XMouseInterface::MouseState XMouseInterface::GetButtonState(MouseButton button) {
+	MouseState state = BTN_UP;
+	if (button == BTN_LEFT) {
+		state = left;
+	} else if (button == BTN_MIDDLE) {
+		state = middle;
+	} else if (button == BTN_RIGHT) {
+		state = right;
+	}
+	return state;
+}
+
 void XMouseInterface::MouseClick(MouseButton button, MouseState state) {
+	
+	// do not relay unnecessary duplicate events
+	if (GetButtonState(button) == state) {
+		return;
+	}
+	
+	SetButtonState(button, state);
 	XTestFakeButtonEvent(m_display, button, state == BTN_DOWN ? True : False, CurrentTime);
 	XFlush(m_display);
 }
