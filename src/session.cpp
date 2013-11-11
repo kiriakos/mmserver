@@ -99,7 +99,7 @@ int InvokeCommand(const std::string command, XClipboardInterface& clip, int clie
 		strcat(message, content);
 		strcat(message, "\x04");
 		
-		syslog(LOG_INFO, "clipboard update message length: %d", strlen(message));
+		syslog(LOG_INFO, "clipboard update message length: %ld", (unsigned long)strlen(message));
 		
 		if (write(client, (const char*)message, strlen(message)) < 1) {
 			free(message);
@@ -328,7 +328,7 @@ void* MobileMouseSession(void* context)
 			struct timeval diff;
 			timersub(&currentMouseEvent, &lastMouseEvent, &diff);
 			lastMouseEvent = currentMouseEvent;
-			double usecdiff = (diff.tv_sec * 1000000) + diff.tv_usec;
+			double usecdiff = ((double)diff.tv_sec * 1000000.0) + (double)diff.tv_usec;
 			
 			int dx, dy;
 			double distance, speed;
