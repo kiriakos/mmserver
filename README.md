@@ -48,10 +48,7 @@ Invoke by running `mmserver` or by choosing *Mobile Mouse Server for Linux* from
 ```sh
 yum -y install rpmdevtools
 bash builddep_fedora.sh
-cp mmserver.spec ~/rpmbuild/SPEC
-cd ~/rpmbuild/SPEC
-wget -O ~/rpmbuild/SOURCES/mmserver-1.4.0.tar.gz https://github.com/anoved/mmserver/archive/v1.4.0.tar.gz
-rpmbuild -ba mmserver.spec
+bash build_rpm.sh
 ```
 
 ## Security
@@ -63,6 +60,7 @@ Additionally, I recommend using the `device.id` and `device.password` configurat
 ## Compatibility
 
 This fork was developed primarily with Mobile Mouse 2.7.1 for iOS and briefly tested with Mobile Mouse 3.0.0 for iOS. It may or may not be compatible with other client versions.
+Briefly tested with version 3.0.2 of Mobile Mouse ( free version ) on iOS.
 
 ## License
 
