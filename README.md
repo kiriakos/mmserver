@@ -43,6 +43,17 @@ sudo make install
 
 Invoke by running `mmserver` or by choosing *Mobile Mouse Server for Linux* from your system menu.
 
+# RPM creation
+
+```sh
+yum -y install rpmdevtools
+bash builddep_fedora.sh
+cp mmserver.spec ~/rpmbuild/SPEC
+cd ~/rpmbuild/SPEC
+wget -O ~/rpmbuild/SOURCES/mmserver-1.4.0.tar.gz https://github.com/anoved/mmserver/archive/v1.4.0.tar.gz
+rpmbuild -ba mmserver.spec
+```
+
 ## Security
 
 The Mobile Mouse protocol is unencrypted. Among other things, this means your key presses are transmitted in plain text, so an eavesdropper connected to your network could easily monitor your input (including passwords) without otherwise compromising your computer or mobile device. I therefore recommend not using Mobile Mouse on public networks. If you must, at least refrain from entering sensitive text.
