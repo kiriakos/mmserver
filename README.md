@@ -43,7 +43,7 @@ sudo make install
 
 Invoke by running `mmserver` or by choosing *Mobile Mouse Server for Linux* from your system menu.
 
-# RPM creation
+### RPM creation
 
 ```sh
 yum -y install rpmdevtools
