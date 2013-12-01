@@ -47,7 +47,8 @@ Invoke by running `mmserver` or by choosing *Mobile Mouse Server for Linux* from
 
 ```sh
 yum -y install rpmdevtools
-bash builddep_fedora.sh
+sudo bash builddep_fedora.sh
+rpmdev-setuptree
 bash build_rpm.sh
 ```
 
