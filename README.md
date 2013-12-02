@@ -43,7 +43,10 @@ sudo make install
 
 Invoke by running `mmserver` or by choosing *Mobile Mouse Server for Linux* from your system menu.
 
-### RPM creation
+### RPM package creation
+Red Hat Package Manager or RPM Package Manager (RPM). RPMs are a standardized package format on the Linux platform and they take care
+of library dependecies and file consitancy. RPM provides a binary files, and cloud be installed without compilation on same 
+platform that it is build for. Read more here: http://en.wikipedia.org/wiki/RPM_Package_Manager
 
 ```sh
 yum -y install rpmdevtools
@@ -51,6 +54,15 @@ sudo bash builddep_fedora.sh
 rpmdev-setuptree
 bash build_rpm.sh
 ```
+
+### Debian package
+Debian package is same as RPMs but for Debian based Linux distributions.
+
+```sh
+sudo sh builddep.sh
+sh build_deb.sh
+```
+
 
 ## Security
 
