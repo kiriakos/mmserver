@@ -66,7 +66,7 @@ sudo sh builddep.sh
 sh build_deb.sh
 # Read where the output deb file is written and use aptitude ( or dpkg ) to install the package for your arch.
 # example install:
-sudo aptitude install ../mmserver_1.4.0-1_amd64.deb
+sudo dpkg -i ../mmserver_1.4.0-1_amd64.deb
 ```
 
 ## Security
