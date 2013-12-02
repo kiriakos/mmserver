@@ -43,6 +43,14 @@ sudo make install
 
 Invoke by running `mmserver` or by choosing *Mobile Mouse Server for Linux* from your system menu.
 
+### RPM creation
+
+```sh
+yum -y install rpmdevtools
+bash builddep_fedora.sh
+bash build_rpm.sh
+```
+
 ## Security
 
 The Mobile Mouse protocol is unencrypted. Among other things, this means your key presses are transmitted in plain text, so an eavesdropper connected to your network could easily monitor your input (including passwords) without otherwise compromising your computer or mobile device. I therefore recommend not using Mobile Mouse on public networks. If you must, at least refrain from entering sensitive text.
@@ -52,6 +60,7 @@ Additionally, I recommend using the `device.id` and `device.password` configurat
 ## Compatibility
 
 This fork was developed primarily with Mobile Mouse 2.7.1 for iOS and briefly tested with Mobile Mouse 3.0.0 for iOS. It may or may not be compatible with other client versions.
+Briefly tested with version 3.0.2 of Mobile Mouse ( free version ) on iOS.
 
 ## License
 
