@@ -44,9 +44,10 @@ sudo make install
 Invoke by running `mmserver` or by choosing *Mobile Mouse Server for Linux* from your system menu.
 
 ### RPM package creation
+
 Red Hat Package Manager or RPM Package Manager (RPM). RPMs are a standardized package format on the Linux platform and they take care
-of library dependecies and file consitancy. RPM provides a binary files, and cloud be installed without compilation on same 
-platform that it is build for. Read more here: http://en.wikipedia.org/wiki/RPM_Package_Manager
+of library dependecies and file consistency. RPM provides a binary file that can be installed without compilation on the same 
+platform it was built for. Read more here: http://en.wikipedia.org/wiki/RPM_Package_Manager
 
 ```sh
 yum -y install rpmdevtools
@@ -59,6 +60,7 @@ sudo yum install ~/rpmbuild/RPMS/x86_64/mmserver-1.4.0-0.SS.fc19.x86_64.rpm
 ```
 
 ### Debian package
+
 Debian package is same as RPMs but for Debian based Linux distributions.
 
 ```sh
