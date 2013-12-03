@@ -3,7 +3,7 @@
 
 Name:           mmserver
 Version:        1.4.0
-Release:        0.SS%{?dist}
+Release:        1.SS%{?dist}
 Summary:        Modified Mobile Mouse Server for Linux. Intended for (but not limited to) use with Raspbian & Raspberry Pi.
 Group:          Applications/System
 License:        GPL2
@@ -34,9 +34,6 @@ cmake ..
 make %{?_smp_mflags}
 
 %install
-## TODO: Provide patches instead of using sed
-%__sed -i 's|debug: true|debug: false|' mmserver.conf
-
 cd build
 rm -rf $RPM_BUILD_ROOT
 make install DESTDIR=$RPM_BUILD_ROOT
@@ -57,7 +54,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_datadir}/mmserver/*
 
 %changelog
-* Sat Nov 30 2013 Stiliyan Sabchew <ssabchew at yahoo dot com> - 0.4.0
+* Mon Dec 2 2013 Stiliyan Sabchew <ssabchew at yahoo dot com> - 0.4.0-1
+- Removed pathcing config file.
+* Sat Nov 30 2013 Stiliyan Sabchew <ssabchew at yahoo dot com> - 0.4.0-0
 - Initial packing.
 - Change debug to false.
 - Tested with version 3.0.2 of Mobile Mouse (free version).

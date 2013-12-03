@@ -43,12 +43,30 @@ sudo make install
 
 Invoke by running `mmserver` or by choosing *Mobile Mouse Server for Linux* from your system menu.
 
-### RPM creation
+### RPM package creation
+Red Hat Package Manager or RPM Package Manager (RPM). RPMs are a standardized package format on the Linux platform and they take care
+of library dependecies and file consitancy. RPM provides a binary files, and cloud be installed without compilation on same 
+platform that it is build for. Read more here: http://en.wikipedia.org/wiki/RPM_Package_Manager
 
 ```sh
 yum -y install rpmdevtools
-bash builddep_fedora.sh
+sudo bash builddep_fedora.sh
+rpmdev-setuptree
 bash build_rpm.sh
+# Read where the output rpm file is written and use yum to install the package for your arch.
+# example install:
+sudo yum install ~/rpmbuild/RPMS/x86_64/mmserver-1.4.0-0.SS.fc19.x86_64.rpm 
+```
+
+### Debian package
+Debian package is same as RPMs but for Debian based Linux distributions.
+
+```sh
+sudo sh builddep.sh
+sh build_deb.sh
+# Read where the output deb file is written and use aptitude ( or dpkg ) to install the package for your arch.
+# example install:
+sudo dpkg -i ../mmserver_1.4.0-1_amd64.deb
 ```
 
 ## Security
