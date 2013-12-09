@@ -170,11 +170,12 @@ void* MobileMouseSession(void* context)
 		char m[1024];
 		snprintf(m, sizeof(m), "CONNECTED\x1e"
 				"NO\x1e"
-				"WIN\x1e"
+				"%s\x1e"
 				"%s\x1e"
 				"Device is not allowed\x1e"
 				"00:00:00:00:00:00\x1e"
 				"4\x04",
+				appConfig.getPlatform().c_str(),
 				appConfig.getHostname().c_str());
 		if (write(client, (const char*)m, strlen((const char*)m)) > 0)
 			n = read(client, m, sizeof(m)); /* let client disconnect */
@@ -190,11 +191,12 @@ void* MobileMouseSession(void* context)
 		char m[1024];
 		snprintf(m, sizeof(m), "CONNECTED\x1e"
 				"NO\x1e"
-				"WIN\x1e"
+				"%s\x1e"
 				"%s\x1e"
 				"Incorrect password\x1e"
 				"00:00:00:00:00:00\x1e"
 				"4\x04",
+				appConfig.getPlatform().c_str(),
 				appConfig.getHostname().c_str());
 		if (write(client, (const char*)m, strlen((const char*)m)) > 0)
 			n = read(client, m, sizeof(m)); /* let client disconnect */
@@ -208,11 +210,12 @@ void* MobileMouseSession(void* context)
 		char m[1024];
 		snprintf(m, sizeof(m), "CONNECTED\x1e"
 				"YES\x1e"
-				"LINUX\x1e"
+				"%s\x1e"
 				"%s\x1e"
 				"Welcome\x1e"
 				"00:00:00:00:00:00\x1e"
 				"4\x04",
+				appConfig.getPlatform().c_str(),
 				appConfig.getHostname().c_str());
 		if (write(client, (const char*)m, strlen((const char*)m)) < 1)
 		{

@@ -34,6 +34,7 @@ class Configuration
 		void Read(const std::string& file);
 
 		const std::string& getHostname() const;
+		const std::string& getPlatform() const;
 		bool getDebug() const;
 		unsigned short getPort() const;
 		bool getZeroconf() const;
@@ -51,6 +52,7 @@ class Configuration
 		const std::string getHotKeyCommand(unsigned int id) const;
 	private:
 		std::string m_hostname;
+		std::string m_platform;
 		bool m_debug;
 		unsigned short m_port;
 		bool m_zeroconf;

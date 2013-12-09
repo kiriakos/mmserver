@@ -24,6 +24,7 @@
 
 Configuration::Configuration()
 : m_hostname("localhost")
+, m_platform("MAC")
 , m_debug(true)
 , m_port(9099)
 , m_zeroconf(true)
@@ -63,7 +64,19 @@ void Configuration::Read(const std::string& file)
 	{
 		m_zeroconf = (bool)config.lookup("server.zeroconf");
 	}
-
+	
+	if (config.exists("server.platform"))
+	{
+		std::string platform;
+		
+		platform = (const char *)config.lookup("server.platform");
+		if (platform == "MAC" || platform == "WIN") {
+			m_platform = platform;
+		} else {
+			syslog(LOG_ERR, "server.platform must be MAC or WIN");
+		}
+	}
+	
 	if (config.exists("device.id"))
 	{
 		libconfig::Setting& id = config.lookup("device.id");
@@ -193,6 +206,11 @@ void Configuration::Read(const std::string& file)
 const std::string& Configuration::getHostname() const
 {
 	return m_hostname;
+}
+
+const std::string& Configuration::getPlatform() const
+{
+	return m_platform;
 }
 
 bool Configuration::getDebug() const
