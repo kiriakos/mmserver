@@ -144,7 +144,7 @@ void* MobileMouseSession(void* context)
 
 	/* hello */
 	std::string password, id, name;
-	if (!pcrecpp::RE("CONNECT\x1e(.*?)\x1e(.*?)\x1e(.*?)\x1e[0-9]\x1e[0-9]\x04").FullMatch(buffer,
+	if (!pcrecpp::RE("CONNECT\x1e(.*?)\x1e(.*?)\x1e(.*?)\x1e(?:.*)\x04").FullMatch(buffer,
 				&password, &id, &name))
 	{
 		syslog(LOG_INFO, "[%s] disconnected (invalid protocol)", address.c_str());
