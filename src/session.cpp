@@ -136,7 +136,10 @@ void* MobileMouseSession(void* context)
 	n = read(client, buffer, sizeof(buffer));
 	if (n < 1)
 	{
-		syslog(LOG_INFO, "[%s] disconnected (read failed: %s)", address.c_str(), strerror(errno));
+		syslog(LOG_INFO, "[%s] disconnected (connection failed: %s)", address.c_str(), strerror(errno));
+		if (appConfig.getDebug()) {
+			dumpPacket(buffer);
+		}
 		close(client);
 		return NULL;
 	}
@@ -276,6 +279,9 @@ void* MobileMouseSession(void* context)
 			if (n < 1)
 			{
 				syslog(LOG_INFO, "[%s] disconnected (read failed: %s)", address.c_str(), strerror(errno));
+				if (appConfig.getDebug()) {
+					dumpPacket(buffer);
+				}
 				close(client);
 				break;
 			}
