@@ -229,7 +229,10 @@ void* MobileMouseSession(void* context)
 	}
 
 	/* register hotkeys */
-	{
+	// Disabled if reported client id is "Android" to circumvent connection problems.
+	// Android Mobile Mouse Lite appears to not support hotkey name definitions (and, critically, fails to connect if supplied)
+	// Untested with Android Mobile Mouse Pro
+	if (id != "Android") {
 		char m[1024];
 		snprintf(m, sizeof(m), "HOTKEYS\x1e"
 				"%s\x1e"
