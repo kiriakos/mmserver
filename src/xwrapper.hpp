@@ -28,34 +28,67 @@
 class XMouseInterface
 {
 	public:
+		
 		enum MouseState {
 			BTN_DOWN,
 			BTN_UP,
 		};
-
+		
+		enum MouseButton {
+			BTN_LEFT = 1,
+			BTN_MIDDLE = 2,
+			BTN_RIGHT = 3
+		}; 
+		
 		XMouseInterface(const std::string display = "");
 		~XMouseInterface();
-
-		void MouseLeft(MouseState state);
-		void MouseRight(MouseState state);
-		void MouseWheelY(int offset);
+		
+		void MouseClick(MouseButton button, MouseState state);
+		void MouseScroll(int x, int y);
 		void MouseMove(int x, int y);
 	private:
-		Display *m_display; 
+		
+		void SetButtonState(MouseButton button, MouseState state);
+		XMouseInterface::MouseState GetButtonState(MouseButton button);
+		
+		Display *m_display;
+		MouseState left, middle, right;
 };
 
 class XKeyboardInterface
 {
 	public:
-		XKeyboardInterface(const std::string display = "");
+		XKeyboardInterface(bool enabled = true, const std::string display = "");
 		~XKeyboardInterface();
 
 		void SendKey(const std::list<int>& keycode);
 		void SendKey(int keycode);
-		bool KeyState(int keycode);
+		
+		void PressKeys(const std::list<int>& keys);
+		void ReleaseKeys(const std::list<int>& keys);
+		
+		bool keysymIsShiftVariant(KeySym key);
+		
 	private:
 
-		Display *m_display; 
+		Display *m_display;
+		bool keyboardEnabled;
+};
+
+class XClipboardInterface
+{
+	public:
+		XClipboardInterface(const std::string display = "");
+		~XClipboardInterface();
+
+		bool Update(void);
+		const std::string GetString(void);
+		const char *GetCStr(void);
+	
+	private:
+		Display *m_display;
+		Window m_window;
+		std::string clipcache;
 };
 
 #endif

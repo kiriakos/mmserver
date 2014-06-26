@@ -24,6 +24,7 @@
 #include <errno.h>
 #include <syslog.h>
 #include <unistd.h>
+#include <math.h>
 
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
@@ -36,6 +37,86 @@
 #include "xwrapper.hpp"
 #include "utils.hpp"
 
+// pushes keysyms for any modifier keys named in `modifiers` onto the end of `keys`
+void SetModKeys(const std::string& modifiers, std::list<int>& keys) {
+	std::list<std::string> modlist = SplitString(modifiers, '+');
+	for (std::list<std::string>::const_iterator i = modlist.begin(); i != modlist.end(); i++) {
+		if (*i == "CTRL") {
+			keys.push_back(XK_Control_L);
+		}
+		if (*i == "OPT") {
+			keys.push_back(XK_Super_L);
+		}
+		if (*i == "ALT") {
+			keys.push_back(XK_Alt_L);
+		}
+		if (*i == "SHIFT") {
+			keys.push_back(XK_Shift_L);
+		}
+		// consider logging any unhandled tokens
+	}
+}
+
+/*
+ * Parameters:
+ *   command, string containing command to execute (unless recognized as special control code)
+ *   clip, reference to the clipboard interface
+ *   client, for use by any control codes that need to communicate with the client app
+ * 
+ * Return:
+ *   2 if a memory allocation or string operation failed
+ *   1 if error occurred communicating with client
+ *   0 otherwise
+ */
+int InvokeCommand(const std::string command, XClipboardInterface& clip, int client) {
+	
+	if (command.empty()) {
+		return 0;
+	}
+	
+	/* special case commands */
+	if (command.compare("SYNC_CLIPBOARD") == 0) {
+		char *message = NULL;
+		const char *content = NULL;
+		
+		clip.Update();
+		content = clip.GetCStr();
+		
+		/*
+		15 - CLIPBOARDUPDATE
+		4  - TEXT
+		3  - (control bytes)
+		1  - (null end byte)
+		--------------------
+		23 - (message setup)
+		*/
+		
+		if ((message = (char *)malloc(23 + strlen(content))) == NULL) {
+			return 1;
+		}
+		
+		strcpy(message, "CLIPBOARDUPDATE\x1e" "TEXT\x1f");
+		strcat(message, content);
+		strcat(message, "\x04");
+		
+		syslog(LOG_INFO, "clipboard update message length: %ld", (unsigned long)strlen(message));
+		
+		if (write(client, (const char*)message, strlen(message)) < 1) {
+			free(message);
+			return 2;
+		}
+		
+		free(message);
+	}
+	else {
+		
+		/* interpret all other commands literally */
+		system(command.c_str());
+	}
+	
+	return 0;
+}
+
 void* MobileMouseSession(void* context)
 {
 	Configuration& appConfig = static_cast<SessionContext*>(context)->m_appConfig;
@@ -44,7 +125,8 @@ void* MobileMouseSession(void* context)
 	delete static_cast<SessionContext*>(context);
 
 	XMouseInterface mousePointer;
-	XKeyboardInterface keyBoard;
+	XKeyboardInterface keyBoard(appConfig.getKeyboardEnabled());
+	XClipboardInterface clipboard;
 
 	syslog(LOG_INFO, "[%s] connected", address.c_str());
 
@@ -54,7 +136,10 @@ void* MobileMouseSession(void* context)
 	n = read(client, buffer, sizeof(buffer));
 	if (n < 1)
 	{
-		syslog(LOG_INFO, "[%s] disconnected (read failed: %s)", address.c_str(), strerror(errno));
+		syslog(LOG_INFO, "[%s] disconnected (connection failed: %s)", address.c_str(), strerror(errno));
+		if (appConfig.getDebug()) {
+			dumpPacket(buffer);
+		}
 		close(client);
 		return NULL;
 	}
@@ -62,10 +147,7 @@ void* MobileMouseSession(void* context)
 
 	/* hello */
 	std::string password, id, name;
-	if (!pcrecpp::RE("CONNECT\x1e(.*?)\x1e(.*?)\x1e(.*?)\x1e[0-9]\x1e[0-9]\x04").FullMatch(buffer,
-				&password, &id, &name) && 
-		/* free mouse */
-		!pcrecpp::RE("CONNECT\x1e(.*?)\x1e(.*?)\x1e(.*?)\x1e[0-9]\x04").FullMatch(buffer,
+	if (!pcrecpp::RE("CONNECT\x1e(.*?)\x1e(.*?)\x1e(.*?)\x1e(?:.*)\x04").FullMatch(buffer,
 				&password, &id, &name))
 	{
 		syslog(LOG_INFO, "[%s] disconnected (invalid protocol)", address.c_str());
@@ -78,7 +160,12 @@ void* MobileMouseSession(void* context)
 		close(client);
 		return NULL;
 	}
-
+	
+	if (appConfig.getDebug()) {
+		syslog(LOG_INFO, "[%s] device id: %s", address.c_str(), id.c_str());
+		syslog(LOG_INFO, "[%s] device name: %s", address.c_str(), name.c_str());
+	}
+	
 	/* verify device.id */
 	if (!appConfig.getDevices().empty() &&
 			appConfig.getDevices().find(id) == appConfig.getDevices().end())
@@ -86,11 +173,12 @@ void* MobileMouseSession(void* context)
 		char m[1024];
 		snprintf(m, sizeof(m), "CONNECTED\x1e"
 				"NO\x1e"
-				"WIN\x1e"
+				"%s\x1e"
 				"%s\x1e"
 				"Device is not allowed\x1e"
 				"00:00:00:00:00:00\x1e"
-				"3\x04",
+				"4\x04",
+				appConfig.getPlatform().c_str(),
 				appConfig.getHostname().c_str());
 		if (write(client, (const char*)m, strlen((const char*)m)) > 0)
 			n = read(client, m, sizeof(m)); /* let client disconnect */
@@ -106,11 +194,12 @@ void* MobileMouseSession(void* context)
 		char m[1024];
 		snprintf(m, sizeof(m), "CONNECTED\x1e"
 				"NO\x1e"
-				"WIN\x1e"
+				"%s\x1e"
 				"%s\x1e"
 				"Incorrect password\x1e"
 				"00:00:00:00:00:00\x1e"
-				"3\x04",
+				"4\x04",
+				appConfig.getPlatform().c_str(),
 				appConfig.getHostname().c_str());
 		if (write(client, (const char*)m, strlen((const char*)m)) > 0)
 			n = read(client, m, sizeof(m)); /* let client disconnect */
@@ -124,11 +213,12 @@ void* MobileMouseSession(void* context)
 		char m[1024];
 		snprintf(m, sizeof(m), "CONNECTED\x1e"
 				"YES\x1e"
-				"WIN\x1e"
+				"%s\x1e"
 				"%s\x1e"
 				"Welcome\x1e"
 				"00:00:00:00:00:00\x1e"
-				"3\x04",
+				"4\x04",
+				appConfig.getPlatform().c_str(),
 				appConfig.getHostname().c_str());
 		if (write(client, (const char*)m, strlen((const char*)m)) < 1)
 		{
@@ -139,7 +229,10 @@ void* MobileMouseSession(void* context)
 	}
 
 	/* register hotkeys */
-	{
+	// Disabled if reported client id is "Android" to circumvent connection problems.
+	// Android Mobile Mouse Lite appears to not support hotkey name definitions (and, critically, fails to connect if supplied)
+	// Untested with Android Mobile Mouse Pro
+	if (id != "Android") {
 		char m[1024];
 		snprintf(m, sizeof(m), "HOTKEYS\x1e"
 				"%s\x1e"
@@ -151,33 +244,6 @@ void* MobileMouseSession(void* context)
 				appConfig.getHotKeyName(3).c_str(),
 				appConfig.getHotKeyName(4).c_str()
 				);
-		if (write(client, (const char*)m, strlen((const char*)m)) < 1)
-		{
-			syslog(LOG_INFO, "[%s] disconnected (write failed: %s)", address.c_str(), strerror(errno));
-			close(client);
-			return NULL;
-		}
-	}
-
-	/* ugly hack: switch to MEDIA and back to OTHER in order to remove spinner */
-	{
-		const char* m;
-		m = "SWITCHMODE\x1e"
-			"MEDIA\x1e"
-			"\x1e"
-			"\x1e"
-			"\x04";
-		if (write(client, (const char*)m, strlen((const char*)m)) < 1)
-		{
-			syslog(LOG_INFO, "[%s] disconnected (write failed: %s)", address.c_str(), strerror(errno));
-			close(client);
-			return NULL;
-		}
-		m = "SWITCHMODE\x1e"
-			"OTHER\x1e"
-			"\x1e"
-			"\x1e"
-			"\x04";
 		if (write(client, (const char*)m, strlen((const char*)m)) < 1)
 		{
 			syslog(LOG_INFO, "[%s] disconnected (write failed: %s)", address.c_str(), strerror(errno));
@@ -216,74 +282,106 @@ void* MobileMouseSession(void* context)
 			if (n < 1)
 			{
 				syslog(LOG_INFO, "[%s] disconnected (read failed: %s)", address.c_str(), strerror(errno));
+				if (appConfig.getDebug()) {
+					dumpPacket(buffer);
+				}
 				close(client);
 				break;
 			}
 			packet_buffer.append(buffer, n);
 			continue;
 		}
-
-		/* mouse clicks */
-		std::string key, state;
- 		if (pcrecpp::RE("CLICK\x1e([LR])\x1e([DU])\x1e\x04").FullMatch(packet, &key, &state))
+		
+		/* options */
+		std::string option, optval;
+		if (pcrecpp::RE("SETOPTION\x1e(.*?)\x1e(.*?)\x04").FullMatch(packet, &option, &optval))
 		{
-			if (key == "L")
-				mousePointer.MouseLeft(state == "D"?
-						XMouseInterface::BTN_DOWN:
-						XMouseInterface::BTN_UP);
-			if (key == "R")
-				mousePointer.MouseRight(state == "D"?
-						XMouseInterface::BTN_DOWN:
-						XMouseInterface::BTN_UP);
+			if (option == "CLIPBOARDSYNC") {
+				syslog(LOG_INFO, "Clipboard sync: %s", optval.c_str());
+			}
+			else if (option == "PRESENTATION") {
+				/* Presumably concerns the extra in-app purchase "pro presentation module" */
+				syslog(LOG_INFO, "Presentation mode: %s", optval.c_str());
+			}
+			else {
+				syslog(LOG_ERR, "Unknown option: %s", option.c_str());
+			}
+			continue;
+		}
+		
+		/* mouse clicks */
+		std::string key, state, modifier;
+ 		if (pcrecpp::RE("CLICK\x1e([LR])\x1e([DU])\x1e(.*?)\x04").FullMatch(packet, &key, &state, &modifier))
+		{
+			std::list<int> modkeys;
+			SetModKeys(modifier, modkeys);
+			
+			if (!modkeys.empty() && state == "D") {
+				keyBoard.PressKeys(modkeys);
+			}
+			
+			mousePointer.MouseClick(
+					key == "L" ? XMouseInterface::BTN_LEFT : XMouseInterface::BTN_RIGHT,
+					state == "D" ? XMouseInterface::BTN_DOWN : XMouseInterface::BTN_UP);
+			
+			if (!modkeys.empty() && state == "U") {
+				keyBoard.ReleaseKeys(modkeys);
+			}
+			
 			continue;
 		}
 
 		/* mouse movements */
 		std::string xp, yp;
-		/* PATCH0.2 // if (pcrecpp::RE("MOVE\x1e(-?\\d+)\x1e(-?\\d+)\x1e[10]\x04").FullMatch(packet, &xp, &yp)) */
-		if (pcrecpp::RE("MOVE\x1e(-?[\\d\x2e]+)\x1e(-?[\\d\x2e]+)\x1e[10]\x04").FullMatch(packet, &xp, &yp))
-        /*if (pcrecpp::RE("MOVE(.-?[0-9]+.[0-9]+){2}.[10].\x04").FullMatch(packet, &xp, &yp))*/
+		if (pcrecpp::RE("MOVE\x1e(-?[\\d\x2e]+)\x1e(-?[\\d\x2e]+)\x1e[10]\x1e?\x04").FullMatch(packet, &xp, &yp))
 		{
 			struct timeval currentMouseEvent;
-			gettimeofday(&currentMouseEvent, 0x0);
+			gettimeofday(&currentMouseEvent, NULL);
 			struct timeval diff;
 			timersub(&currentMouseEvent, &lastMouseEvent, &diff);
 			lastMouseEvent = currentMouseEvent;
-			if (appConfig.getMouseAcceleration() && diff.tv_sec == 0 && diff.tv_usec < 20000)
-			{
-				mousePointer.MouseMove(
-						(int)strtol(xp.c_str(), 0x0, 10) * 4,
-						(int)strtol(yp.c_str(), 0x0, 10) * 4
-						);
-
-			} else {
-				mousePointer.MouseMove(
-						(int)strtol(xp.c_str(), 0x0, 10),
-						(int)strtol(yp.c_str(), 0x0, 10)
-						);
+			double usecdiff = ((double)diff.tv_sec * 1000000.0) + (double)diff.tv_usec;
+			
+			int dx, dy;
+			double distance, speed;
+			dx = (int)strtol(xp.c_str(), NULL, 10);
+			dy = (int)strtol(yp.c_str(), NULL, 10);
+			distance = sqrt((dx * dx) + (dy * dy));
+			speed = distance / usecdiff;
+			
+			// if acceleration is enabled, apply when estimated cursor speed exceeds given rate (pixels per microsecond)
+			if (appConfig.getMouseAcceleration() && (speed > appConfig.getMouseAccelerationSpeed())) {
+				dx *= appConfig.getMouseAccelerationFactor();
+				dy *= appConfig.getMouseAccelerationFactor();
 			}
+			
+			mousePointer.MouseMove(dx, dy);
 			continue;
 		}
 
-		/* trackpad scrolling */
+		/* mouse scrolling */
 		std::string xs, ys;
-		if (pcrecpp::RE("SCROLL\x1e(-?\\d+)\x1e(-?\\d+)\x1e\x04").FullMatch(packet, &xs, &ys))
-		{
-			mousePointer.MouseWheelY(
-					-(int)strtol(ys.c_str(), 0x0, 10)
-					);
+		if (pcrecpp::RE("SCROLL\x1e(-?\\d+)\x1e(-?\\d+)\x1e(.*?)\x04").FullMatch(packet, &xs, &ys, &modifier))
+		{			
+			int dx, dy;
+			dx = appConfig.getMouseHorizontalScrolling() ? (int)strtol(xs.c_str(), NULL, 10) : 0;
+			dy = (int)strtol(ys.c_str(), NULL, 10);
+			
+			// scrollmax is at least 1
+			int maxd = appConfig.getMouseScrollMax();
+			if (abs(dx) > maxd) {
+				dx = maxd * dx / abs(dx);
+			}
+			if (abs(dy) > maxd) {
+				dy = maxd * dy / abs(dy);
+			}
+			
+			mousePointer.MouseScroll(dx, dy);
 			continue;
 		}
-		/* free mouse */
-		if (pcrecpp::RE("SCROLL\x1e(-?\\d+\\.\\d+)\x1e(-?\\d+\\.\\d+)\x1e\x04").FullMatch(packet, &xs, &ys))
-		{
-			mousePointer.MouseWheelY(
-					-(int)strtof(ys.c_str(), 0x0)
-					);
-			continue;
-		}
-
+		
 		/* zooming */
+		/* consider handling in/out zoom as generic spread/pinch gesture hotkeys */ 
 		std::string zoom;
 		if (pcrecpp::RE("ZOOM\x1e(-?\\d+)\x04").FullMatch(packet, &zoom))
 		{
@@ -301,9 +399,10 @@ void* MobileMouseSession(void* context)
 		}
 
 		/* key board */
-		std::string chr, utf8, modifier;
+		std::string chr, utf8;
 		if (pcrecpp::RE("KEY\x1e(.*?)\x1e(.*?)\x1e(.*?)\x04").FullMatch(packet, &chr, &utf8, &modifier))
 		{
+			std::list<int> keys;
 			int keyCode = 0;
 			if (chr == "-61")
 			{
@@ -341,8 +440,10 @@ void* MobileMouseSession(void* context)
 				if (utf8 == "NUM_MULTIPLY") keyCode = XK_KP_Multiply;
 				if (utf8 == "NUM_SUBTRACT") keyCode = XK_KP_Subtract;
 				if (utf8 == "NUM_ADD") keyCode = XK_KP_Add;
-				if (utf8 == "Enter") keyCode = XK_KP_Enter;
+				if (utf8 == "NUM_ENTER") keyCode = XK_KP_Enter;
+				if (utf8 == "NUM_EQUAL") keyCode = XK_KP_Equal;
 				if (utf8 == "NUM_DECIMAL") keyCode = XK_KP_Decimal;
+				if (utf8 == "INSERT") keyCode = XK_KP_Insert;
 				if (utf8 == "NUM0") keyCode = XK_KP_0;
 				if (utf8 == "NUM1") keyCode = XK_KP_1;
 				if (utf8 == "NUM2") keyCode = XK_KP_2;
@@ -353,7 +454,16 @@ void* MobileMouseSession(void* context)
 				if (utf8 == "NUM7") keyCode = XK_KP_7;
 				if (utf8 == "NUM8") keyCode = XK_KP_8;
 				if (utf8 == "NUM9") keyCode = XK_KP_9;
-
+				
+				// non-num-locked keypad equivalents are received directly (as HOME, END, PGUP, etc)
+				// so prefix keypad input with shift to interpet as regular numerals
+				if (keyCode == XK_KP_0 ||
+						keyCode == XK_KP_1 || keyCode == XK_KP_2 || keyCode == XK_KP_3
+						|| keyCode == XK_KP_4 || keyCode == XK_KP_5 || keyCode == XK_KP_6
+						|| keyCode == XK_KP_7 || keyCode == XK_KP_8 || keyCode == XK_KP_9) {
+					keys.push_back(XK_Shift_L);
+				}
+				
 				/* function page */
 				if (utf8 == "ESCAPE") keyCode = XK_Escape;
 				if (utf8 == "DELETE") keyCode = XK_Delete;
@@ -386,27 +496,66 @@ void* MobileMouseSession(void* context)
 			}
 			else
 			{
+				// utf8 could contain multibyte characters; currently unhandled
 				keyCode = utf8[0];
-			}
-
-			std::list<int> keys;
-			std::list<std::string> modlist = SplitString(modifier, '+');
-			for (std::list<std::string>::const_iterator i = modlist.begin();
-					i != modlist.end(); i++)
-			{
-				if (*i == "CTRL")
-					keys.push_back(XK_Control_L);
-				if (*i == "OPT")
-					keys.push_back(XK_Super_L);
-				if (*i == "ALT")
-					keys.push_back(XK_Alt_L);
-				if (*i == "SHIFT")
+				
+				// check if the shift key is required to generate input character (hack)
+				if (keyBoard.keysymIsShiftVariant((KeySym)strtol(chr.c_str(), NULL, 10))) {
 					keys.push_back(XK_Shift_L);
+				}
 			}
+			
+			SetModKeys(modifier, keys);
+			
 			if (keyCode > 0)
 			{
 				keys.push_back(keyCode);
 				keyBoard.SendKey(keys);
+				continue;
+			}
+		}
+		
+		/* keystrings */
+		std::string keystring;
+		if (pcrecpp::RE("KEYSTRING\x1e(.*?)\x04").FullMatch(packet, &keystring))
+		{
+			std::list<int> keys;
+			for (std::string::const_iterator i = keystring.begin(); i != keystring.end(); i++)
+			{
+				// keystrings are currently only generated when the client's shift-lock button
+				// is toggled on... so every character that could be a shift variant presumably is.
+				// Except for the last character, because keystrings are only sent once shift-lock
+				// is disabled and another character is entered (which is included). Weird.
+				if (keyBoard.keysymIsShiftVariant((KeySym)*i)) {
+					keys.push_back(XK_Shift_L);
+				}
+				
+				keys.push_back(*i);
+			}
+			keyBoard.SendKey(keys);
+			continue;
+		}
+		
+		/* gestures */
+		std::string gesture;
+		if (pcrecpp::RE("GESTURE\x1e(.*?)\x04").FullMatch(packet, &gesture)) {
+			int hotkey = 0;
+			if (gesture == "TWOFINGERDOUBLETAP")   hotkey = 7;
+			if (gesture == "THREEFINGERSINGLETAP") hotkey = 8;
+			if (gesture == "THREEFINGERDOUBLETAP") hotkey = 9;
+			if (gesture == "FOURFINGERPINCH")      hotkey = 10;
+			if (gesture == "FOURFINGERSPREAD")     hotkey = 11;
+			if (gesture == "FOURFINGERSWIPELEFT")  hotkey = 12;
+			if (gesture == "FOURFINGERSWIPERIGHT") hotkey = 13;
+			if (gesture == "FOURFINGERSWIPEUP")    hotkey = 14;
+			if (gesture == "FOURFINGERSWIPEDOWN")  hotkey = 15;
+			if (hotkey != 0) {
+				std::string command = appConfig.getHotKeyCommand(hotkey);
+				if (InvokeCommand(command, clipboard, client)) {
+					syslog(LOG_INFO, "[%s] disconnected (write failed: %s)", address.c_str(), strerror(errno));
+					close(client);
+					break;
+				}
 				continue;
 			}
 		}
@@ -416,38 +565,40 @@ void* MobileMouseSession(void* context)
 		if (pcrecpp::RE("HOTKEY\x1eHK(\\d)\x04").FullMatch(packet, &hotkey))
 		{
 			std::string command = appConfig.getHotKeyCommand((unsigned int)strtoul(hotkey.c_str(), 0x0, 10));
-			int ret;
-			if (!command.empty())
-				ret = system(command.c_str());
+			if(InvokeCommand(command, clipboard, client)) {
+				syslog(LOG_INFO, "[%s] disconnected (write failed: %s)", address.c_str(), strerror(errno));
+				close(client);
+				break;
+			}
 			continue;
 		}
 		if (pcrecpp::RE("HOTKEY\x1e(B[12])\x04").FullMatch(packet, &hotkey))
 		{
 			std::string command;
-			if (hotkey == "B1")
+			
+			// B1 is invoked when scroll pad is tapped (but not scrolled),
+			// like clicking the middle mouse button of a scroll mouse.
+			// So, if no hotkey command is defined, fake a middle button click.
+			if (hotkey == "B1") {
 				command = appConfig.getHotKeyCommand(5);
-			if (hotkey == "B2")
-				command = appConfig.getHotKeyCommand(6);
-			int ret;
-			if (!command.empty())
-				ret = system(command.c_str());
-			continue;
-		}
-
-		/* handle keystrings... eg. ".com" */
-		std::string keystring;
-		if (pcrecpp::RE("KEYSTRING\x1e(.*?)\x04").FullMatch(packet, &keystring))
-		{
-			std::list<int> keys;
-			for (std::string::const_iterator i = keystring.begin();
-					i != keystring.end(); i++)
-			{
-				keys.push_back(*i);
+				if (command.empty()) {
+					mousePointer.MouseClick(XMouseInterface::BTN_MIDDLE, XMouseInterface::BTN_DOWN);
+					mousePointer.MouseClick(XMouseInterface::BTN_MIDDLE, XMouseInterface::BTN_UP);
+				}
 			}
-			keyBoard.SendKey(keys);
+			// I don't know how to invoke B2.
+			if (hotkey == "B2") {
+				command = appConfig.getHotKeyCommand(6);
+			}
+			
+			if (InvokeCommand(command, clipboard, client)) {
+				syslog(LOG_INFO, "[%s] disconnected (write failed: %s)", address.c_str(), strerror(errno));
+				close(client);
+				break;
+			}
 			continue;
 		}
-
+		
 		/* screens */
 		std::string mode;
 		if (pcrecpp::RE("SWITCHMODE\x1e(.*?)\x04").FullMatch(packet, &mode))
@@ -672,7 +823,15 @@ void* MobileMouseSession(void* context)
 			}
 		}
 
-		syslog(LOG_INFO, "[%s] unhandled packet: size(%lu)", address.c_str(), packet.size());
+
+		/* promotional links */
+		std::string url;
+		if (pcrecpp::RE("OPENLINK\x1e(.*?)\x04").FullMatch(packet, &url)) {
+			syslog(LOG_INFO, "Promotional link: %s", url.c_str());
+			continue;
+		}
+
+		syslog(LOG_INFO, "[%s] unhandled packet: size(%lu)", address.c_str(), (long unsigned int)packet.size());
 
 		/* dump unhandled packets */
 		if (appConfig.getDebug())
