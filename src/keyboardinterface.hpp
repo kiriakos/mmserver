@@ -17,78 +17,30 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#ifndef _XWRAPPER_HPP_
-#define _XWRAPPER_HPP_
+#ifndef _KEYBOARDINTERFACE_HPP_
+#define _KEYBOARDINTERFACE_HPP_
 
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
 #include <string>
 #include <list>
 
-class XMouseInterface
+class KeyboardInterface
 {
 	public:
-		
-		enum MouseState {
-			BTN_DOWN,
-			BTN_UP,
-		};
-		
-		enum MouseButton {
-			BTN_LEFT = 1,
-			BTN_MIDDLE = 2,
-			BTN_RIGHT = 3
-		}; 
-		
-		XMouseInterface(const std::string display = "");
-		~XMouseInterface();
-		
-		void MouseClick(MouseButton button, MouseState state);
-		void MouseScroll(int x, int y);
-		void MouseMove(int x, int y);
-	private:
-		
-		void SetButtonState(MouseButton button, MouseState state);
-		XMouseInterface::MouseState GetButtonState(MouseButton button);
-		
-		Display *m_display;
-		MouseState left, middle, right;
-};
-
-class XKeyboardInterface
-{
-	public:
-		XKeyboardInterface(bool enabled = true, const std::string display = "");
-		~XKeyboardInterface();
+		KeyboardInterface(bool enabled = true, const std::string display = "");
+		~KeyboardInterface();
 
 		void SendKey(const std::list<int>& keycode);
 		void SendKey(int keycode);
-		
+
 		void PressKeys(const std::list<int>& keys);
 		void ReleaseKeys(const std::list<int>& keys);
-		
-		bool keysymIsShiftVariant(KeySym key);
-		
-	private:
 
+		bool keysymIsShiftVariant(KeySym key);
+
+	private:
 		Display *m_display;
 		bool keyboardEnabled;
 };
-
-class XClipboardInterface
-{
-	public:
-		XClipboardInterface(const std::string display = "");
-		~XClipboardInterface();
-
-		bool Update(void);
-		const std::string GetString(void);
-		const char *GetCStr(void);
-	
-	private:
-		Display *m_display;
-		Window m_window;
-		std::string clipcache;
-};
-
 #endif

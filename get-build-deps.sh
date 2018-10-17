@@ -7,7 +7,8 @@ sudo apt-get install\
 		libx11-dev libxtst-dev\
 		libpcre3-dev\
 		libavahi-common-dev libavahi-client-dev\
-		libconfig++8-dev\
+		libconfig++-dev\
+        libevdev-dev \
 		libgtk2.0-dev \
 		libxmu-dev libxt-dev
 

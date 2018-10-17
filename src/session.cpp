@@ -34,7 +34,9 @@
 
 #include <pcrecpp.h>
 
-#include "xwrapper.hpp"
+#include "keyboardinterface.hpp"
+#include "mouseinterface.hpp"
+#include "clipboardinterface.hpp"
 #include "utils.hpp"
 
 // pushes keysyms for any modifier keys named in `modifiers` onto the end of `keys`
@@ -68,7 +70,7 @@ void SetModKeys(const std::string& modifiers, std::list<int>& keys) {
  *   1 if error occurred communicating with client
  *   0 otherwise
  */
-int InvokeCommand(const std::string command, XClipboardInterface& clip, int client) {
+int InvokeCommand(const std::string command, ClipboardInterface& clip, int client) {
 	
 	if (command.empty()) {
 		return 0;
@@ -124,9 +126,9 @@ void* MobileMouseSession(void* context)
 	std::string address = static_cast<SessionContext*>(context)->m_address;
 	delete static_cast<SessionContext*>(context);
 
-	XMouseInterface mousePointer;
-	XKeyboardInterface keyBoard(appConfig.getKeyboardEnabled());
-	XClipboardInterface clipboard;
+	MouseInterface mousePointer;
+	KeyboardInterface keyBoard(appConfig.getKeyboardEnabled());
+	ClipboardInterface clipboard;
 
 	syslog(LOG_INFO, "[%s] connected", address.c_str());
 
@@ -321,8 +323,8 @@ void* MobileMouseSession(void* context)
 			}
 			
 			mousePointer.MouseClick(
-					key == "L" ? XMouseInterface::BTN_LEFT : XMouseInterface::BTN_RIGHT,
-					state == "D" ? XMouseInterface::BTN_DOWN : XMouseInterface::BTN_UP);
+					key == "L" ? MouseInterface::LEFT : MouseInterface::RIGHT,
+					state == "D" ? MouseInterface::DOWN : MouseInterface::UP);
 			
 			if (!modkeys.empty() && state == "U") {
 				keyBoard.ReleaseKeys(modkeys);
@@ -361,8 +363,8 @@ void* MobileMouseSession(void* context)
 
 		/* mouse scrolling */
 		std::string xs, ys;
-		if (pcrecpp::RE("SCROLL\x1e(-?\\d+)\x1e(-?\\d+)\x1e(.*?)\x04").FullMatch(packet, &xs, &ys, &modifier))
-		{			
+		if (pcrecpp::RE("SCROLL\x1e(-?\\d+.?\\d+)\x1e(-?\\d+.?\\d+)\x1e(.*?)\x04").FullMatch(packet, &xs, &ys, &modifier))
+		{
 			int dx, dy;
 			dx = appConfig.getMouseHorizontalScrolling() ? (int)strtol(xs.c_str(), NULL, 10) : 0;
 			dy = (int)strtol(ys.c_str(), NULL, 10);
@@ -493,6 +495,16 @@ void* MobileMouseSession(void* context)
 				if (utf8 == "VOLUP") keyCode = XF86XK_AudioRaiseVolume;
 				if (utf8 == "VOLMUTE") keyCode = XF86XK_AudioMute;
 				if (utf8 == "EJECT") keyCode = XF86XK_Eject;
+
+				if (keyCode == 0) {
+					// utf8 could contain multibyte characters; currently unhandled
+					keyCode = utf8[0];
+
+					// check if the shift key is required to generate input character (hack)
+					if (keyBoard.keysymIsShiftVariant((KeySym)strtol(chr.c_str(), NULL, 10))) {
+						keys.push_back(XK_Shift_L);
+					}
+				}
 			}
 			else
 			{
@@ -582,8 +594,8 @@ void* MobileMouseSession(void* context)
 			if (hotkey == "B1") {
 				command = appConfig.getHotKeyCommand(5);
 				if (command.empty()) {
-					mousePointer.MouseClick(XMouseInterface::BTN_MIDDLE, XMouseInterface::BTN_DOWN);
-					mousePointer.MouseClick(XMouseInterface::BTN_MIDDLE, XMouseInterface::BTN_UP);
+					mousePointer.MouseClick(MouseInterface::MIDDLE, MouseInterface::DOWN);
+					mousePointer.MouseClick(MouseInterface::MIDDLE, MouseInterface::UP);
 				}
 			}
 			// I don't know how to invoke B2.
